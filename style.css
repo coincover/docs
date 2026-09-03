@@ -42,6 +42,11 @@ html {
   overflow-x: hidden;
 }
 
+/* Mintlify does not compile max-w-8xl from MDX (no mint-max-w-8xl). */
+.cc-hero {
+  max-width: 90rem;
+}
+
 .cc-hero-bg {
   pointer-events: none;
   position: absolute;
