@@ -7,13 +7,15 @@
     "light": "#B59BFD",
     "dark": "#B59BFD"
   },
+  "contextual": {
+    "options": ["copy", "view", "claude", "cursor"],
+    "display": "header"
+  },
   "navigation": {
     "tabs": [
       {
         "tab": "Get Started",
-        "pages": [
-          "index"
-        ]
+        "pages": ["index"]
       },
       {
         "tab": "Products",
@@ -81,23 +83,26 @@
         "tab": "API Reference",
         "groups": [
           {
-            "group": "Wallet Provider API",
-            "openapi": "specs/wallet-provider.openapi.json"
-          },
-          {
-            "group": "Institutional API",
-            "openapi": "specs/institutional.openapi.json"
-          },
-          {
-            "group": "Retail API",
-            "openapi": "specs/retail.openapi.json"
+            "group": "API Reference",
+            "pages": [
+              {
+                "group": "Wallet Provider API",
+                "openapi": "specs/wallet-provider.openapi.json"
+              },
+              {
+                "group": "Institutional API",
+                "openapi": "specs/institutional.openapi.json"
+              },
+              {
+                "group": "Retail API",
+                "openapi": "specs/retail.openapi.json"
+              },
+              {
+                "group": "Updates",
+                "pages": ["changelog/changelog"]
+              }
+            ]
           }
-        ]
-      },
-      {
-        "tab": "Changelog",
-        "pages": [
-          "changelog/changelog"
         ]
       }
     ]
