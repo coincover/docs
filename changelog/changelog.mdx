@@ -3,6 +3,57 @@ title: "Changelog"
 description: "New features, fixes, and improvements to CoinCover."
 ---
 
+<Update label="September 2026 · v1.21.0">
+  **New features**
+
+  - **Invitation-only signup** — Signing up to Control is now restricted to people who have received an invitation from an administrator, or who are completing an administrator-initiated reset. Nobody can self-register against your organisation.
+  - **Access control lists** — Access control lists are now first-class objects you can manage in their own right, rather than being tied to a single backup. New list and detail pages show every list, who is on it, and which backups it governs — and a single list can now cover multiple backups. Approval requests link straight to the list they affect, so approvers can review a change in context.
+  - **Recovery policy review and attestation** — Recovery policies now go through a documented review and attestation step. Policies carry version history and are superseded cleanly when replaced, and member tasks and Test Recovery unlock once the policy has been attested.
+  - **Test Recovery drills** — Owners can run a Test Recovery drill end to end, including a one-time download, to prove a recovery would work before it is ever needed. Control now checks the required prerequisites are in place before a drill can start, so you find gaps up front instead of mid-drill.
+  - **Recovery Readiness training** — Readiness training can now be assigned and tracked for the people named in your recovery plan, with progress visible alongside their other readiness tasks.
+  - **Resend pending invitations** — You can now resend an invitation to any user who hasn't yet completed signup, straight from the system users list. Previously the only option was to remove the user and invite them again.
+  - **Security keys for approvals** — The security key you register for sign-in now also works for organisation-level approval prompts, so you can use one method throughout.
+
+  **Bug fixes**
+
+  - Fixed an error when creating an API key that prevented some administrators from completing the action.
+  - Pending access control change requests are now only shown to genuine members of the affected list. Previously they could also appear for users who held broad read permissions but no membership.
+  - Approval notifications for an access control change now reach every member of the relevant list, including where that list covers several backups.
+  - A recovery can no longer be started while a change to the governing access control list is still awaiting approval.
+  - Fixed several issues on the access control screens: the total count no longer changes when you filter, the backups table refreshes immediately after you assign a list, and you can now undo the outgoing side of a pending member replacement.
+  - Fixed issues in the Recovery Readiness setup flow, where some steps were unclear and certain capabilities were incorrectly shown as unavailable to eligible organisations.
+  - Uploading a recovery policy now works reliably from Control.
+  - The organisation switcher now names the organisation you are currently working in.
+
+  **Security**
+
+  - Applied the outstanding dependency advisories across the platform. No customer action is required.
+</Update>
+
+<Update label="August 2026 · v1.20">
+  **New features**
+
+  - **Sign in with a YubiKey** — You can now use a YubiKey or other WebAuthn security key as your multi-factor method at sign-in, as an alternative to an authenticator app. You choose which method to use when you are prompted.
+  - **Organisation API keys** — Organisations can now create and manage their own API keys, so you can integrate Control with your own systems.
+  - **Recovery Readiness (early access)** — First release of Recovery Readiness. Owners can begin setting up their readiness programme and assign tasks to members. Availability is controlled per organisation — speak to your account contact if you would like it enabled.
+
+  **Improvements**
+
+  - The vault list is now paginated and usable on accounts with a large number of vaults.
+
+  **Bug fixes**
+
+  - Vault sync is significantly more reliable. Syncs no longer get stuck in a pending state on large accounts, no longer fail part-way through when a custody provider connection expires, and correctly resume on a first-time sync. Large vault sets now sync completely rather than stopping short.
+  - Fixed an issue where preparing a hot-key-only recovery download would fail.
+  - Fixed an issue where members could not complete multi-factor setup if sign-in MFA was not enabled for their organisation.
+  - You can now remove a partner from an organisation when it has no backups assigned to it.
+  - Clearer error messages when assigning a user to an organisation or sending an invitation fails.
+
+  **Security**
+
+  - Applied the outstanding high and medium severity dependency advisories across the platform. No customer action is required.
+</Update>
+
 <Update label="July 2026 · v1.18.7">
   **New features**
 
