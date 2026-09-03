@@ -1,0 +1,75 @@
+@keyframes cc-marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.cc-marquee {
+  animation: cc-marquee var(--cc-duration, 10s) linear infinite;
+}
+
+.cc-marquee-fade {
+  pointer-events: none;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  z-index: 10;
+  width: 5rem;
+}
+
+.cc-marquee-fade-left {
+  left: 0;
+  background: linear-gradient(to right, #ffffff, transparent);
+}
+
+.cc-marquee-fade-right {
+  right: 0;
+  background: linear-gradient(to left, #ffffff, transparent);
+}
+
+html.dark .cc-marquee-fade-left {
+  background: linear-gradient(to right, #0e171b, transparent);
+}
+
+html.dark .cc-marquee-fade-right {
+  background: linear-gradient(to left, #0e171b, transparent);
+}
+
+html {
+  overflow-x: hidden;
+}
+
+.cc-hero-bg {
+  pointer-events: none;
+  position: absolute;
+  top: -12rem;
+  right: -12rem;
+  z-index: 0;
+  width: 44rem;
+}
+
+@media (max-width: 1023px) {
+  .cc-hero-bg {
+    display: none;
+  }
+}
+
+.cc-hero-bg img {
+  display: block;
+  width: 100%;
+  height: auto;
+  opacity: 0.4;
+  mix-blend-mode: screen;
+}
+
+html.dark .cc-hero-bg img {
+  opacity: 0.55;
+}
+
+.cc-hero-content {
+  position: relative;
+  z-index: 1;
+}

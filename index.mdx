@@ -1,34 +1,70 @@
 ---
 title: "Welcome to CoinCover"
 description: "Pick the product you're integrating with and follow its guide."
+mode: "custom"
 ---
 
-CoinCover Recover gives you a recoverable, audit-ready way to release sensitive key material when it's needed back — without ever holding plaintext keys. Material is encrypted before it reaches us; our role is to release it under verified conditions, with a full audit trail.
+import { NotSureCta } from "/snippets/NotSureCta.tsx";
+import { TalkToUs } from "/snippets/TalkToUs.tsx";
+import { PartnerLogoScroller } from "/snippets/PartnerLogoScroller.tsx";
+import { TrustBadgesFooter } from "/snippets/TrustBadgesFooter.tsx";
 
-There are three products. Pick the one that matches your integration:
+<div className="cc-hero relative mx-auto flex w-full flex-col gap-10 px-4 pt-8 pb-12 lg:px-12">
+<div className="cc-hero-bg" aria-hidden="true">
+  <img src="/images/background@3x.webp" alt="" />
+</div>
+<section className="cc-hero-content flex w-full flex-col gap-6 pb-2">
+<h1 className="text-4xl font-bold text-black">Welcome to CoinCover</h1>
+<p className="text-lg leading-relaxed text-gray-900 dark:text-zinc-50">
+Lost keys should never mean lost assets. CoinCover Recover backs up sensitive key material without ever holding plaintext keys, because everything is encrypted before it reaches us. When you need it back, strict verification makes sure your keys are released to you and no one else, and a full audit trail gives you the evidence to show regulators and clients exactly what happened and when.
+</p>
+<p className="text-md text-gray-500 dark:text-zinc-400">Trusted by 600+ financial institutions. 22 million wallets protected. 100% recovery success rate.</p>
 
+</section>
+
+<section className="cc-hero-content flex w-full flex-col gap-1">
+<p className="text-lg text-gray-900 dark:text-zinc-50">Three products, one job. Pick your route and start building.</p>
 <CardGroup cols={3}>
   <Card title="Recover for Wallet Providers" icon="plug" href="/wallet-provider-recovery/overview">
     For wallet platforms, custodians, and exchanges backing up their **customers'** wallets. Integrate the Partner Key Service under the hood — by API or key ceremony — using your platform's native backup and recovery.
   </Card>
 
-  <Card title="Recover for Institutions" icon="building-columns" href="/institutional-recovery/overview">
-    For institutions backing up their **own** wallets. Served through a supported platform, or integrated directly — back up a key, add CoinCover as a multi-sig backup key, or use the CLI.
-  </Card>
+<Card
+  title="Recover for Institutions"
+  icon="building-columns"
+  href="/institutional-recovery/overview"
+>
+  For institutions backing up their **own** wallets. Served through a supported
+  platform, or integrated directly — back up a key, add CoinCover as a multi-sig
+  backup key, or use the CLI.
+</Card>
 
   <Card title="Retail Recover" icon="user" href="/retail-recovery/overview">
     For wallet providers serving **end users**. Identity-verified release tied to a user identifier, with hosted IDV and webhook-driven status. Available via REST API.
   </Card>
 </CardGroup>
+</section>
+<NotSureCta />
 
-## Where to go next
+<section className="flex w-full flex-col gap-2">
+<h2 className="text-xl font-bold text-black">Where to go next</h2>
 
-Each product section starts with an overview of the architecture, then walks you through integration end to end, then covers testing in sandbox.
+<CardGroup cols={3}>
+  <Card title="Start Integrating" href="/wallet-provider-recovery/overview">
+ Each product section starts with an overview of the architecture, then walks you through integration end to end, then covers testing in sandbox.
+ </Card>
 
-If you already know the product and just want the endpoint catalogue, the API reference tab lists each product's API under its own heading — Wallet Provider, Institutional, and Retail. Each surface has its own authentication and base URLs (and, for Retail, its own event model), so it's documented in full within its own section.
+<Card title="API Reference" href="/api-reference/overview">
+  Request and response schemas, authentication, error codes and webhook
+  payloads, with example calls you can copy straight into your client.
+</Card>
 
-Want to see what's changed recently? The changelog tab tracks new features, fixes, and improvements.
+  <Card title="Changelog" href="/changelog/overview">
+    Want to see what's changed recently? The changelog tab tracks new features, fixes, and improvements.
+  </Card>
+</CardGroup>
+</section>
+<PartnerLogoScroller />
 
-<Note>
-  Not sure which product fits? [Talk to us](https://www.coincover.com/contact) and we'll point you at the right starting line.
-</Note>
+<TrustBadgesFooter />
+</div>
