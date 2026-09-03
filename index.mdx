@@ -1,0 +1,34 @@
+---
+title: "Welcome to CoinCover"
+description: "Pick the product you're integrating with and follow its guide."
+---
+
+CoinCover Recover gives you a recoverable, audit-ready way to release sensitive key material when it's needed back — without ever holding plaintext keys. Material is encrypted before it reaches us; our role is to release it under verified conditions, with a full audit trail.
+
+There are three products. Pick the one that matches your integration:
+
+<CardGroup cols={3}>
+  <Card title="Recover for Wallet Providers" icon="plug" href="/wallet-provider-recovery/overview">
+    For wallet platforms, custodians, and exchanges backing up their **customers'** wallets. Integrate the Partner Key Service under the hood — by API or key ceremony — using your platform's native backup and recovery.
+  </Card>
+
+  <Card title="Recover for Institutions" icon="building-columns" href="/institutional-recovery/overview">
+    For institutions backing up their **own** wallets. Served through a supported platform, or integrated directly — back up a key, add CoinCover as a multi-sig backup key, or use the CLI.
+  </Card>
+
+  <Card title="Retail Recover" icon="user" href="/retail-recovery/overview">
+    For wallet providers serving **end users**. Identity-verified release tied to a user identifier, with hosted IDV and webhook-driven status. Available via REST API.
+  </Card>
+</CardGroup>
+
+## Where to go next
+
+Each product section starts with an overview of the architecture, then walks you through integration end to end, then covers testing in sandbox.
+
+If you already know the product and just want the endpoint catalogue, the API reference tab lists each product's API under its own heading — Wallet Provider, Institutional, and Retail. Each surface has its own authentication and base URLs (and, for Retail, its own event model), so it's documented in full within its own section.
+
+Want to see what's changed recently? The changelog tab tracks new features, fixes, and improvements.
+
+<Note>
+  Not sure which product fits? [Talk to us](https://www.coincover.com/contact) and we'll point you at the right starting line.
+</Note>

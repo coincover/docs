@@ -1,0 +1,70 @@
+---
+title: "Testing"
+---
+
+Sandbox is where you build confidence. Use it to walk through every scenario your runbook is meant to cover — including the ones you hope never to hit.
+
+## What sandbox gives you
+
+- A faithful copy of the production API, with the same encryption and the same enclaves
+- Lower rate limits to protect shared infrastructure
+- Test data that resets on request — talk to us if you want a clean slate
+
+## Scenarios to cover
+
+Here's the test matrix we recommend partners walk through before going live.
+
+### Happy path
+
+<Steps>
+  <Step title="Assign a key">
+    Call `POST /v1/partner/keys` against the sandbox base URL. Confirm the key appears in your audit log.
+  </Step>
+  <Step title="Encrypt and store">
+    Encrypt a small test payload client-side with the public key (RSA-OAEP, SHA-256), then call `POST /v1/partner/secure/data` with the ciphertext and plaintext checksum.
+  </Step>
+  <Step title="Upload a file">
+    Call `POST /v1/partner/secure/file` with a small encrypted binary. Confirm you receive a `backup_id`.
+  </Step>
+  <Step title="Confirm the audit trail">
+    Verify each backup packages appear in the CoinCover Control log with the right `customer_id` and `package_id`.
+  </Step>
+  <Step title="Trigger a sandbox recovery">
+    Recoveries run through CoinCover Control. Coordinate with your account manager to walk a sandbox recovery end-to-end before production.
+  </Step>
+</Steps>
+
+### Failure paths — Partner Key Service
+
+These are the API-side failures most worth rehearsing.
+
+| Scenario | What to test |
+| --- | --- |
+| **Missing or invalid token** | Drop the `Authorization` header, or use an expired token. Expect `401 Unauthorized`. |
+| **Insufficient permissions** | Use a token without partner-endpoint scope. Expect `403 Forbidden`. |
+| **Duplicate key assignment** | Call `POST /v1/partner/keys` twice with the same `user_identifier` and `organisation`. Expect `409 Conflict` with the message "Key already assigned for this user and organisation". |
+| **Bad checksum** | Submit a checksum that isn't a valid SHA-256 hex string. Expect `400 Bad Request` with a field-keyed validation error on `checksum`. |
+| **Wrong padding type** | Submit `padding_type: "PKCS1"` or any value other than `OAEP`. Expect `400 Bad Request`. |
+| **Oversized file** | Upload a file larger than 10MB to `/v1/partner/secure/file`. Expect `413 Payload Too Large`. |
+| **Unsupported file type** | Upload with a `Content-Type` other than `application/octet-stream`. Expect `415 Unsupported Media Type`. |
+| **Network failure mid-flight** | Drop the connection during a store operation. Confirm your retry logic reaches a consistent end-state — see [error handling](/operations/error-handling) for the recommended pattern. |
+
+### Failure paths — recovery flow
+
+Recoveries run through CoinCover Control — a human-driven UI, not an API. When a recovery is approved, the recovery material is delivered to the authoriser as a GPG-encrypted secure download. There's no programmatic surface here for partners to integrate against; you're testing the end-to-end operational path with us.
+
+Coordinate with your account manager to walk these scenarios end-to-end in sandbox before production:
+
+- **Authoriser not on the ACL** — the request from an unauthorised identity should be refused
+- **Authoriser's GPG key is wrong or missing** — they receive a payload they can't decrypt; confirm your runbook handles this without exposing plaintext
+- **Identity verification doesn't complete in time** — the recovery should expire cleanly, not hang
+- **Stale key reference** — recovery against a rotated or superseded key should be rejected
+
+### Operational scenarios
+
+| Scenario | What to test |
+| --- | --- |
+| **Authoriser leaves the company** | Remove from ACL in Control, confirm new requests from them are refused. |
+| **Authoriser device lost** | Re-onboard the authoriser. Confirm the old credentials are invalidated. |
+| **Rotation drill** | Rotate every key in your sandbox account. Confirm each new assignment lands cleanly and the older keys remain queryable for audit. |
+| **HOT vs COLD selection** | Walk through both `key_environment` values for a representative customer. Confirm your downstream tooling handles each correctly — environment is fixed for the life of the key. |

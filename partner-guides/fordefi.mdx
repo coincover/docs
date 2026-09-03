@@ -1,0 +1,81 @@
+---
+title: "Fordefi"
+sidebarTitle: "Fordefi"
+description: "Backup and recovery for the Fordefi self-custody MPC wallet — a console-based backup flow and key-return recovery."
+icon: "shield-halved"
+---
+
+Fordefi is a **self-custody MPC wallet in a 2-of-2 setup**. The integration is **console-based with Slack coordination**: CoinCover issues its RSA public key as a `.pem` file, the customer uploads it in the Fordefi Console, and Fordefi delivers the encrypted recovery package to the customer's designated email address — or the customer downloads it from the console instead. CoinCover holds only the corresponding RSA private key, within our hardware-isolated key vault — never the key shares themselves.
+
+Because CoinCover holds just a decryption key, recovery is a **key return**: CoinCover returns the RSA private key under verified conditions, and the customer decrypts the recovery package Fordefi delivered to them to regain access.
+
+## At a glance
+
+| Attribute | Detail |
+| --- | --- |
+| Wallet model | MPC, 2-of-2 (self-custody) |
+| Integration | Console-based, coordinated with Fordefi over Slack; RSA public key handed over as a `.pem` file |
+| What CoinCover holds | The RSA private key, stored in an environment of customer choosing |
+| Recovery | Key return — CoinCover returns the RSA private key; the customer decrypts the recovery package locally |
+
+## Backup
+
+The backup is driven from the Fordefi Console, with CoinCover and Fordefi confirming the public key over Slack at either end so both sides know exactly which key was used.
+
+<Steps>
+  <Step title="CoinCover prepares the public key">
+    CoinCover Tech Ops pull the customer's RSA public key from the CoinCover API as a `.pem` file. CoinCover support provides it to the customer and directs them to initiate backup in the Fordefi Console, then confirms with Fordefi over Slack which public key was provided.
+  </Step>
+  <Step title="The customer initiates backup in the Fordefi Console">
+    The customer uploads the public key in the Fordefi Console and **designates a recovery email address** to receive the backup. We recommend a dedicated recovery inbox, kept separate from everyday mailboxes — even if it were compromised, the contents are encrypted to CoinCover's public key and can't be used. A customer who would rather not use email can skip this and download the package from the console instead.
+  </Step>
+  <Step title="The customer validates on mobile with quorum approval">
+    The customer validates the public key on their mobile device, then waits for the rest of the admin quorum to approve via mobile.
+  </Step>
+  <Step title="Fordefi builds and delivers the recovery package">
+    Fordefi encrypts both key shares with the public key and assembles them into a **recovery package**, which it sends to the designated email address — or makes available to download from the Fordefi Console for customers who opted out of email. Fordefi then confirms back to CoinCover over Slack which public key was used and that the customer has received the material.
+  </Step>
+</Steps>
+
+<Note>
+  Unlike the other partners, the Fordefi recovery package bundles the **wallet derivation paths** in alongside the two encrypted key shares. Because those paths live inside the package, Fordefi generates a **fresh recovery package every time a wallet is added** to the account — sent to the designated inbox, or re-downloadable from the console. 
+</Note>
+
+## Recovery
+
+Recovery is a key return. CoinCover releases the RSA private key under verified conditions, and the customer runs Fordefi's recovery tool themselves on an offline machine.
+
+<Steps>
+  <Step title="Request recovery through CoinCover Control">
+    Initiate a recovery request in CoinCover Control. Release is gated by identity verification and your approval policy. As part of the request you supply a **public GPG key**, which CoinCover uses to encrypt the recovery package in transit.
+  </Step>
+  <Step title="CoinCover releases the RSA private key">
+    CoinCover releases the RSA private key from our hardware-isolated key vault and returns it to the customer securely, encrypted to the GPG public key they supplied. The customer decrypts it with their **GPG private key** to obtain the RSA private key.
+  </Step>
+  <Step title="Run the Fordefi recovery tool offline">
+    On an offline machine, the customer places the Fordefi recovery tool, the encrypted key material (the `.json` extracted from the backup `.zip`), and the CoinCover-provided private key into a folder, then runs the tool to produce an `output.csv` of the per-vault private keys.
+  </Step>
+  <Step title="Move funds with the recovered keys">
+    The customer uses the recovered keys to access their assets independently of Fordefi. ECDSA-based chains import into standard wallets; EdDSA-based chains (such as Solana, Sui, Aptos) use Fordefi's dedicated recovery-tool commands to move funds.
+  </Step>
+</Steps>
+
+## What's next
+
+<CardGroup cols={2}>
+  <Card title="Utila" icon="wallet" href="/partner-guides/utila">
+    The API-based single-backup MPC integration.
+  </Card>
+
+  <Card title="Fireblocks" icon="layer-group" href="/partner-guides/fireblocks">
+    The workspace and device-share MPC integration.
+  </Card>
+
+  <Card title="BitGo" icon="wallet" href="/partner-guides/bitgo">
+    Backup and recovery across the BitGo self-custody wallet.
+  </Card>
+
+  <Card title="Partners overview" icon="handshake" href="/partner-guides/overview">
+    All CoinCover partner integrations.
+  </Card>
+</CardGroup>

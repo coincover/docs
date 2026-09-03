@@ -1,0 +1,53 @@
+---
+title: "Approve or reject a recovery request"
+sidebarTitle: "Approve a recovery"
+description: "As a member of an Access Control List, review a recovery request, re-verify your identity, and cast your vote."
+icon: "circle-check"
+---
+
+When a recovery is requested for a backup, everyone on that backup's Access Control List (ACL) is asked to approve it. A simple majority is required before any material is released. This guide is for that approval.
+
+## You'll be notified
+
+A pending recovery reaches you two ways — an email, and the notifications bell at the top right of Control. Both take you to the request.
+
+## Approve or reject
+
+<Steps>
+  <Step title="Open the request">
+    From the email or the bell, open the recovery request.
+  </Step>
+  <Step title="Review it">
+    You'll see the backup, the type of recovery, and how many approvers have voted so far.
+  </Step>
+  <Step title="Verify your identity">
+    Before your approval is recorded, you complete a fresh identity check. This confirms it's really you approving, at the moment of approval — a recent sign-in isn't enough on its own. If your organisation has hardware security keys enabled, you'll also be asked to tap your registered security key as part of this step.
+  </Step>
+  <Step title="Approve or reject">
+    Approve to add your vote toward the majority, or reject to decline the recovery.
+  </Step>
+</Steps>
+
+<Warning>
+  Your vote is final once you confirm it. Review the request carefully before confirming.
+</Warning>
+
+## What happens next
+
+Once a simple majority of the ACL has approved, the recovery is authorised and the encrypted package is prepared for the requester to download. Only members of that backup's ACL can approve its recovery.
+
+## What's next
+
+<CardGroup cols={2}>
+  <Card title="Recover key material" icon="key" href="/guides/control/recover-key-material">
+    The requester's side of a recovery.
+  </Card>
+
+  <Card title="Vote on an ACL change" icon="user-check" href="/guides/control/approve-list-change">
+    The other thing an approver is asked to vote on.
+  </Card>
+
+  <Card title="Get started" icon="circle-play" href="/guides/control/get-started">
+    Set up your account and find your way around Control.
+  </Card>
+</CardGroup>

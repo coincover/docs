@@ -1,0 +1,69 @@
+---
+title: "Partners"
+sidebarTitle: "Overview"
+description: "How CoinCover backup and recovery integrates with the wallet and custody platforms we partner with."
+icon: "handshake"
+---
+
+CoinCover integrates with the major institutional wallet and custody platforms so recovery works with the tooling you already use. Each partner has its own security model, so we integrate in the way that fits — through the platform's Partner API, an offline key ceremony, or a self-service backup — while the outcome is always the same: CoinCover holds encrypted recovery material and releases it, under verified conditions, when you need it back.
+
+This section documents each partner integration end to end: how backup works across that platform's wallet types, and how recovery runs when a key is lost or compromised.
+
+## Partners we integrate with today
+
+| Partner | Wallet model | Backup mechanism |
+| --- | --- | --- |
+| [BitGo](/partner-guides/bitgo) | Multi-sig and MPC | Key ceremony, RSA encrypt-and-store, or CLI |
+| [Fireblocks](/partner-guides/fireblocks) | MPC-CMP, 3-of-3 | RSA encryption via Partner API |
+| Cobo | MPC, 2-of-3 | Key ceremony |
+| [Utila](/partner-guides/utila) | MPC, 2-of-2 | RSA encryption via Partner API |
+| [Fordefi](/partner-guides/fordefi) | MPC, 2-of-2 | Console-based, RSA `.pem` handover |
+| [Copper](/partner-guides/copper) | MPC, 2-of-3 (Copper Unlimited) | Key ceremony |
+
+<Note>
+  **Don't see your platform?** We support every non-custodial platform today. <br /><br />[Talk to us](https://www.coincover.com/contact) and we'll show you how.
+</Note>
+
+## What every partner integration shares
+
+<CardGroup cols={2}>
+  <Card title="Hold encrypted recovery material" icon="vault">
+    Every key pair is generated inside a hardware-isolated key vault. The private key is held online for HOT keys, or in our offline, geo-redundant vault for COLD keys. We can't read your recovery material in plaintext, and neither can our staff.
+  </Card>
+
+  <Card title="Verify identity at recovery time" icon="user-check">
+    Every recovery is gated by identity verification through CoinCover Control. The right person gets the assets back, and no-one else.
+  </Card>
+
+  <Card title="Work with the platform's tooling" icon="plug">
+    We don't replace your wallet UX. We sit alongside it, using each partner's native backup and recovery mechanisms.
+  </Card>
+
+  <Card title="Hold the audit trail" icon="scroll">
+    Every assignment, every storage operation, every recovery — recorded and retained for the life of the relationship.
+  </Card>
+</CardGroup>
+
+## What's next
+
+<CardGroup cols={2}>
+  <Card title="BitGo" icon="wallet" href="/partner-guides/bitgo">
+    Backup and recovery across the BitGo self-custody wallet integration pathways.
+  </Card>
+
+  <Card title="Fireblocks" icon="layer-group" href="/partner-guides/fireblocks">
+    The workspace backup and the owner's device key share backup for the Fireblocks MPC workspace.
+  </Card>
+
+  <Card title="Utila" icon="wallet" href="/partner-guides/utila">
+    The API-based single-backup flow and key-return recovery for the Utila MPC wallet.
+  </Card>
+
+  <Card title="Fordefi" icon="shield-halved" href="/partner-guides/fordefi">
+    The console-based backup flow and key-return recovery for the Fordefi self-custody MPC wallet.
+  </Card>
+
+  <Card title="Copper" icon="coins" href="/partner-guides/copper">
+    The offline key-ceremony backup and ACL-approved recovery for the Copper Unlimited MPC wallet.
+  </Card>
+</CardGroup>

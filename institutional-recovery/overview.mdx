@@ -1,0 +1,79 @@
+---
+title: "Overview"
+description: "How to integrate CoinCover recovery for your institution — through a supported wallet platform, our API, or the CLI."
+---
+
+Recover for Institutions gives custodians, exchanges, fintechs, and self-custody teams a credible disaster-recovery path: CoinCover holds encrypted recovery material on your behalf and gets you back access to your assets when a key is lost or compromised. Your plaintext key material is never visible to us or our staff.
+
+How you integrate comes down to one question — whether your wallet platform is one we already support.
+
+## On a supported platform?
+
+If you run on a wallet platform we already integrate with, recovery is served **through that platform**. We sit behind the scenes using its native backup and recovery mechanism, so there's typically nothing for you to build.
+
+| Platform | Wallet model | Backup mechanism |
+| --- | --- | --- |
+| [Fireblocks](/partner-guides/fireblocks) | MPC-CMP, 3-of-3 | RSA encryption via Partner API |
+| [BitGo](/partner-guides/bitgo) | Multi-sig, 2-of-3 | Key ceremony |
+| [Cobo](/partner-guides/cobo) | MPC, 2-of-3 | Key ceremony |
+| [Utila](/partner-guides/utila) | MPC, 2-of-2 | RSA encryption via Partner API |
+| [Fordefi](/partner-guides/fordefi) | MPC, 2-of-2 | Manual handover (no API) |
+| [Copper](/partner-guides/copper) | MPC, 2-of-3 (Copper Unlimited) | Key ceremony |
+
+If your platform is on this list, talk to your account manager — we handle the integration through the platform.
+
+## Not on a supported platform?
+
+If your platform isn't supported, you integrate with CoinCover directly. There are three ways to do it — pick whichever fits how you operate:
+
+<CardGroup cols={3}>
+  <Card title="Back up a key" icon="lock" href="/institutional-recovery/back-up-key-material">
+    Use the API to encrypt key material client-side and store the ciphertext with CoinCover.
+  </Card>
+
+  <Card title="Add CoinCover as a backup key" icon="key" href="/institutional-recovery/add-a-backup-key">
+    Use the API to make CoinCover a key in your multi-sig set up.
+  </Card>
+
+  <Card title="CoinCover CLI" icon="terminal" href="/institutional-recovery/cli-integration-guide">
+    Back up and recover from the command line — no integration code required.
+  </Card>
+</CardGroup>
+
+We add new platform integrations regularly, so if you'd rather we support your platform directly, talk to us.
+
+## What we always do
+
+Whichever route you take, the protections are the same:
+
+<CardGroup cols={2}>
+  <Card title="Hold encrypted recovery material" icon="vault">
+    Every key pair is generated inside an AWS Nitro Enclave. The private key is held online for HOT keys, or in our offline, geo-redundant vault for COLD keys. We can't read your recovery material in plaintext, and neither can our staff.
+  </Card>
+
+  <Card title="Verify identity at recovery time" icon="user-check">
+    Every recovery is gated by identity verification through CoinCover Control. The right person gets your assets back, and no-one else.
+  </Card>
+
+  <Card title="Hold the audit trail" icon="scroll">
+    Every assignment, every storage operation, every recovery — recorded and retained for the life of the relationship.
+  </Card>
+
+  <Card title="Run a 24/7 on-call line" icon="phone">
+    Live support for recovery incidents, whenever they happen.
+  </Card>
+</CardGroup>
+
+## What's next
+
+<CardGroup cols={2}>
+  <Card title="Back up a key" href="/institutional-recovery/back-up-key-material">
+    The encrypt-and-store API integration.
+  </Card>
+
+  <Card title="Add CoinCover as a backup key" href="/institutional-recovery/add-a-backup-key">
+    Make CoinCover part of your multi-sig or MPC setup.
+  </Card>
+</CardGroup>
+
+Building a consumer wallet for end customers instead? See [Recover for Retail](/retail-recovery/overview).

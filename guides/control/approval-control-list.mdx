@@ -1,0 +1,80 @@
+---
+title: "Set up your Access Control List"
+sidebarTitle: "Set up your ACL"
+description: "Decide who can approve the recovery of a backup, and how that Access Control List changes — by a majority vote of its own members."
+icon: "user-shield"
+---
+
+An Access Control List (ACL) is the group of named people authorised to approve the recovery of a backup. Each backup has its own ACL.
+
+Changing who's on an ACL isn't an administrative action. The people already on the list decide, by a simple majority. That's what ensures no single person — not one of your own administrators, and not CoinCover — can quietly change who is able to release your material.
+
+## At a glance
+
+|  |  |
+| --- | --- |
+| **Scope** | One ACL per backup |
+| **Minimum size** | At least three members |
+| **Who approves a change** | A simple majority of the current members |
+| **Identity check** | Every member verifies their identity when they vote |
+| **Who can propose a change** | An Organisation Owner, or a member of the ACL |
+
+## How approval works
+
+A change to an ACL — adding, removing or replacing a member — is approved by a simple majority of the people currently on it. Each member verifies their identity at the moment they vote, so an approval is tied to a verified person at the time it's given, not just to someone who signed in earlier. Where your organisation has hardware security keys enabled, members also tap a registered security key as they vote — an extra physical confirmation on top of the identity check.
+
+## Set up your first ACL
+
+<Steps>
+  <Step title="Onboard your approvers">
+    Everyone you want on the ACL first needs a Control account. Invite them from the **Team** page and have them complete account setup and identity verification. Only active users of your organisation can be added to an ACL.
+  </Step>
+  <Step title="Add your first members together">
+    While an ACL is being established, you add its first members and approve them in one step. Add everyone who should be on it, then approve.
+  </Step>
+  <Step title="Confirm at least three members">
+    An ACL needs at least three members before it can be used to approve a recovery. Once it's established, every later change goes to a vote.
+  </Step>
+</Steps>
+
+<Note>
+  Choose your ACL size with a margin. To remove or replace someone on a three- or four-member list, every remaining member has to approve — so a list of five or more keeps approvals moving even when someone is away.
+</Note>
+
+## Change who's on an ACL
+
+Once an ACL is established, adding, removing or replacing a member is proposed and then voted on.
+
+<Steps>
+  <Step title="Propose the change">
+    On the backup, open its Access Control List and propose adding, removing or replacing a member.
+  </Step>
+  <Step title="The members vote">
+    Everyone currently on the ACL is asked to approve or reject, and each verifies their identity as they vote. The person being removed or replaced doesn't vote on their own change.
+  </Step>
+  <Step title="The change takes effect">
+    Once a simple majority approves, the change is applied. See [Approve or reject an ACL change](/guides/control/approve-list-change) for the voter's side.
+  </Step>
+</Steps>
+
+## Good to know
+
+- **One change at a time.** Finish or cancel a pending change before proposing another.
+- **ACLs are frozen during a recovery.** A backup's ACL can't be edited while a recovery is running on it, and a recovery can't be started while a change to its ACL is in progress. Plan membership changes outside recovery windows.
+- **Remove people from the ACL before the organisation.** Control won't remove a person from your organisation while they're still on any Access Control List, so take them off their ACLs first.
+
+## What's next
+
+<CardGroup cols={2}>
+  <Card title="Approve or reject an ACL change" icon="user-check" href="/guides/control/approve-list-change">
+    The voter's side of a membership change.
+  </Card>
+
+  <Card title="Recover key material" icon="key" href="/guides/control/recover-key-material">
+    Use the ACL to approve a recovery.
+  </Card>
+
+  <Card title="Get started" icon="circle-play" href="/guides/control/get-started">
+    Onboard the people who'll be on your ACLs.
+  </Card>
+</CardGroup>

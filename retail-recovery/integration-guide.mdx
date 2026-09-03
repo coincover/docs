@@ -1,0 +1,263 @@
+---
+title: "Integration guide"
+description: "End-to-end integration of Recover for Retail."
+---
+
+This guide walks you through the full retail recovery integration: identity verification, key generation, client-side encryption, backup storage, and the recovery flow with GPG-encrypted return.
+
+The backup phase links a customer's identity with their encrypted data. While a backup can be initiated before verification is complete, a `verification_id` must be provided to associate the records.
+
+What you actually encrypt and send us depends on your architecture. For wallet providers using a split-key design (the typical retail pattern), this is a recovery-key shard, and the encrypted seed phrase itself stays in your own infrastructure. The API contract is identical — see [the overview](/retail-recovery/overview#what-we-hold-depends-on-your-architecture) for context.
+
+<Note>
+  Two things are worth knowing before you start. First, all sensitive payloads are encrypted on-device — we never see plaintext. Second, business logic must be driven by CoinCover webhooks, not by the Identity SDK's UI events. The Identity SDK events are for transitions in your wallet UI; the webhooks are your source of truth.
+</Note>
+
+## Backup workflow
+
+### Step 1 — Initialise verification
+
+Call `POST /v1/verification/start` to generate a `verification_id` (the inquiry ID from identity, our IDV provider). Pass that ID to your front end and use it to initialise the identity SDK. Make sure you've configured a callback URL to receive status events (`approved`, `declined`, and the rest).
+
+**Request**
+
+```json
+{
+  "user_identifier": "string (required)"
+}
+```
+
+**Response**
+
+```json
+{
+  "verification_id": "string (Identity inquiry ID)"
+}
+```
+
+### Step 2 — Generate cryptographic keys
+
+Call `POST /v1/key/generate` to obtain the public key your customer will use for client-side encryption. You'll need the `user_identifier` and the `verification_id` from Step 1.
+
+**Request**
+
+```json
+{
+  "user_identifier": "string (required)",
+  "verification_id": "string (required)"
+}
+```
+
+**Response**
+
+```json
+{
+  "key_id": "string (UUID)",
+  "public_key": "string (hex-encoded)",
+  "signature": "string (base64)"
+}
+```
+
+The key pair is generated inside a CoinCover enclave. The response includes a `signature` over the `public_key`, signed by the enclave that generated the key. During integration, CoinCover issues you a verification key — use it to verify the signature on every key-generate response. A successful verification confirms the public key really came from a legitimate CoinCover enclave; if it fails, treat the response as untrusted and escalate before encrypting any backup material.
+
+Store the `key_id` against your customer record. You'll reference it in your audit logs and customer-support tooling.
+
+#### Optionally, bind business context into the signature
+
+By default the signature covers only the `public_key`. Pass a `sign_with` array on the request and the enclave signs a canonical JSON payload built from the fields you name plus the `public_key` — so a verified signature attests to _which_ customer the key was issued for, not just the key bytes. That closes off key-substitution between your customers.
+
+Supported fields: `external_customer_id`, `external_package_id`, `pulled_by_id`, `pulled_by_type`, `user_id`, `key_id`, `key_fingerprint`. Don't list `public_key` — it's always included implicitly, and passing it is rejected. Every field you list must resolve to a non-empty value, or the request returns a `400`; `key_fingerprint` is the exception, since it can resolve after the key is generated.
+
+What each field resolves to on a retail request:
+
+- `external_customer_id` / `external_package_id` — resolved server-side from your partner credentials and the `user_identifier`. Retail requests don't carry an `organisation` or `package` block, so you don't send these.
+- `user_id` — CoinCover's internal user id for that `user_identifier`, not the identifier string itself.
+- `key_id` — the id of the key being generated (the same `key_id` returned in the response).
+- `key_fingerprint` — the SHA-256 (hex) of the enclave-issued public-key bytes.
+- `pulled_by_id` / `pulled_by_type` — the credential CoinCover authenticated the call with (`api_key` or `user_credentials`). We set these from your auth token; they aren't read from the request body.
+
+`verification_id` is not bindable. It scopes the call but isn't part of the signed payload, so track which verification session a key belongs to in your own records, against `key_id`.
+
+**Request**
+
+```json
+{
+  "user_identifier": "string (required)",
+  "verification_id": "string (required)",
+  "sign_with": ["external_customer_id", "user_id", "key_fingerprint"]
+}
+```
+
+**Response**
+
+When `sign_with` is present, the response carries two extra fields alongside `signature`:
+
+```json
+{
+  "key_id": "string (UUID)",
+  "public_key": "string (hex-encoded)",
+  "signature": "string (base64)",
+  "signed_payload": "{\"external_customer_id\":\"acme-wallet\",\"key_fingerprint\":\"9f86d081...\",\"public_key\":\"30820122300d...\",\"user_id\":\"5e9b1c74-3a80-4d2e-b1f6-0c7a9e2d4415\"}",
+  "signed_fields": ["external_customer_id", "user_id", "key_fingerprint"]
+}
+```
+
+`signed_payload` is the exact [JCS-canonical](https://www.rfc-editor.org/rfc/rfc8785) JSON string the enclave signed: object keys are sorted, and `public_key` is always included alongside the fields you requested. `signed_fields` echoes the fields you requested, in request order — it doesn't include `public_key`.
+
+Verify the signature over the exact `signed_payload` bytes — don't re-serialise the JSON — then confirm the bound values match the customer you're provisioning. A failed signature, or a bound value you didn't expect, means the response is untrusted: stop and escalate.
+
+<Warning>
+  A contextual signature is verified with the same verification key CoinCover issued you during integration — **not** with the `public_key` in the response. The signature is base64-encoded ECDSA P-256 in DER format.
+</Warning>
+
+Requests are rejected with a `400` if you list `public_key`, name a field outside the supported list, or repeat a field — each field may only appear once.
+
+<Note>
+  `sign_with` is optional and additive. Omit it and the response is unchanged — the signature covers the `public_key` alone, verified over the UTF-8 bytes of the hex `public_key` string — so existing integrations keep working.
+</Note>
+
+### Step 3 — Encrypt the data on-device
+
+Before calling the store endpoint, encrypt the sensitive data on the customer's device. This is the step that keeps plaintext out of our infrastructure — get it right and you're done.
+
+<Steps>
+  <Step title="Get the public key">
+    Use the `public_key` returned in Step 2.
+  </Step>
+  <Step title="Convert format">
+    Convert the hex-encoded public key to PEM or DER, whichever your crypto library expects.
+  </Step>
+  <Step title="Generate a checksum">
+    Compute a SHA-256 checksum of the original, unencrypted data. You'll send this alongside the ciphertext.
+  </Step>
+  <Step title="Encrypt">
+    Encrypt the plaintext using RSA-OAEP with SHA-256 padding.
+  </Step>
+  <Step title="Encode">
+    Base64-encode the resulting ciphertext.
+  </Step>
+</Steps>
+
+### Step 4 — Store the encrypted backup
+
+Call `POST /v1/backup/store` to persist the data.
+
+**Request**
+
+```json
+{
+  "user_identifier": "string (required)",
+  "verification_id": "string (required)",
+  "public_key": "string (hex-encoded, required)",
+  "backup": [
+    {
+      "item_key": "string (required, e.g., 'recovery_key_shard' or 'seed_phrase')",
+      "item_value": "string (base64, encrypted data)",
+      "item_checksum": "string (SHA-256 hex of original data)"
+    }
+  ],
+  "metadata": {
+    "description": "string (optional)",
+    "content_type": "string (optional)",
+    "original_filename": "string (optional)"
+  }
+}
+```
+
+**Response**
+
+```json
+{
+  "backup_type": "data",
+  "metadata": {
+    "stored_at": "string (ISO timestamp)",
+    "backup_items_count": "integer"
+  },
+  "backup": [
+    {
+      "item_key": "string",
+      "backup_id": "string (UUID)",
+      "checksum": "string",
+      "data_size": "integer"
+    }
+  ]
+}
+```
+
+That's the backup phase done. Your customer now has a record they can recover later.
+
+## Recovery workflow
+
+Recovery is a restricted operation. We only release stored backups when we've seen a successful identity verification.
+
+### Step 1 — Re-verify identity
+
+Call `POST /v1/verification/start` to begin a new recovery-specific session. Monitor the status via your configured webhook, or poll `GET /v1/verification/status` if you need a synchronous read.
+
+**Response (`GET /v1/verification/status`)**
+
+```json
+{
+  "verification_id": "string",
+  "status": "pending | approved | declined | review",
+  "updated_at": "string (ISO timestamp)"
+}
+```
+
+### Step 2 — Recover the backup
+
+Once the inquiry status is `approved`, call `POST /v1/backup/recover`. You'll need the `verification_id` from Step 1 and a GPG public key — we use the GPG key to encrypt the recovered data on its way back to you. The orchestrator validates server-side that the verification is approved before releasing any backup material.
+
+The endpoint returns every backup item associated with that user and verification — the response is an array. If the user only ever stored one item, you'll get one entry back; if they stored several (up to three per call), you'll get them all.
+
+**Request**
+
+```json
+{
+  "user_identifier": "string (required)",
+  "verification_id": "string (UUID, required)",
+  "gpg_public_key": "string (GPG public key block format, required)"
+}
+```
+
+**Response**
+
+```json
+{
+  "backup": [
+    {
+      "backup_id": "string (UUID)",
+      "backup_item_key": "string (e.g., 'seed_phrase')",
+      "recovery_id": "string (UUID)",
+      "recovery_package": {
+        "algorithm": "gpg",
+        "data": "string (base64, GPG-encrypted ciphertext)"
+      },
+      "original_filename": "string (if provided at store time)",
+      "content_type": "string (if provided at store time)",
+      "original_size": "string (bytes, if available)",
+      "metadata": {}
+    }
+  ]
+}
+```
+
+Each item in the array is a `BackupRecoverItemResponse`. The `recovery_package` is a unified envelope — for retail, the algorithm is always `gpg` and `data` is the base64-encoded GPG ciphertext. If a particular item failed to recover, the entry will include an `error` field instead of `recovery_package` and `recovery_id`.
+
+We use GPG for the return trip because it gives your customer a clear, well-understood mental model: their device generates a key pair, sends us the public half, and we encrypt the recovered backup to it. The plaintext only exists on the customer's device.
+
+### Step 3 — Rotate and re-back-up
+
+After a recovery, the new recovery code should be backed up via `POST /v1/backup/store` so the protection stays current. The store call requires an approved `verification_id`, so plan to perform the re-back-up on the same recovery session you just used to retrieve the data.
+
+## What's next
+
+<CardGroup cols={2}>
+  <Card title="API reference" href="/retail-recovery/api-reference">
+    Every endpoint, request, and response.
+  </Card>
+
+  <Card title="Testing & sandbox" href="/retail-recovery/testing">
+    Simulating verification outcomes without real customers.
+  </Card>
+</CardGroup>

@@ -1,0 +1,85 @@
+---
+title: "Copper"
+sidebarTitle: "Copper"
+description: "Backup and recovery for the Copper Unlimited MPC wallet — an offline key ceremony, recovery through CoinCover Control, and the self-service Copper Recovery tool."
+icon: "coins"
+---
+
+Copper Unlimited is Copper's MPC wallet, built in a **2-of-3 setup** — any two of three key shards are needed to sign a transaction. CoinCover acts as an independent, trusted third party: we hold a securely encrypted **backup shard** offline, so if you or Copper ever lose access to a shard, you still have the two shards needed to restore access to your Copper Vault.
+
+Backup happens once, during onboarding, in a short **key ceremony** coordinated between you, Copper, and CoinCover. Recovery runs through **CoinCover Control**: anyone on your team can raise a request, but nothing is released until your approvers sign off. Once released, you regain access with Copper's **Copper Recovery** tool.
+
+## At a glance
+
+| Attribute | Detail |
+| --- | --- |
+| Wallet model | MPC, 2-of-3 (Copper Unlimited) |
+| Backup mechanism | Offline key ceremony, coordinated between you, Copper, and CoinCover |
+| What CoinCover holds | A securely encrypted backup shard, held offline as an independent third party |
+| Recovery | Requested and gated through CoinCover Control; completed with the Copper Recovery tool |
+
+## Backup
+
+Backup is a one-time setup, created in a short key ceremony once your Copper agreement and CoinCover Control onboarding are in place. The ceremony itself takes only a few minutes.
+
+<Steps>
+  <Step title="Agree a time for the key ceremony">
+    Pick a suitable time with Copper and CoinCover for the key ceremony — the short, coordinated session where your backup is created.
+  </Step>
+  <Step title="Join the key ceremony">
+    In the ceremony, CoinCover creates and securely backs up an encrypted copy of your Copper shard. It takes around ten minutes per key, and CoinCover runs the process with you and Copper — there's no tooling for you to set up.
+  </Step>
+  <Step title="Your backup goes live">
+    CoinCover stores your encrypted backup offline in our secure vault and confirms when it's live. From that point, your Copper Vault is protected and ready to recover, and the backup appears in CoinCover Control.
+  </Step>
+</Steps>
+
+<Note>
+  CoinCover only ever holds an **encrypted** backup shard — never enough on its own to move your assets. A recovery always needs your own shard (or Copper's) together with the one CoinCover releases, and it only happens once your approvers in Control have signed off.
+</Note>
+
+## Recovery
+
+Recovery is for an emergency — a lost shard or password, or Copper being unavailable. It's requested and gated through **CoinCover Control**: anyone on your team can raise a request, but nothing is released until your approvers sign off. Once released, you regain access with Copper's Copper Recovery tool.
+
+<Steps>
+  <Step title="Request recovery through CoinCover Control">
+    Raise a recovery request in CoinCover Control and select the backup to recover. As part of the request you supply a **public GPG key**, which CoinCover uses to encrypt the released material so it's protected in transit. New to GPG? See [Create a GPG key pair](/guides/control/create-gpg-key).
+  </Step>
+  <Step title="Your approvers sign off">
+    The named approvers on the backup are asked to approve, each re-verifying their identity as they vote. Nothing is released until a simple majority has approved.
+  </Step>
+  <Step title="CoinCover releases your backup shard">
+    Because your Copper backup is held offline, CoinCover's team retrieves it before releasing — Control tells you this is happening and notifies you when the encrypted download is ready. You download it and decrypt it locally with your **GPG private key**.
+  </Step>
+  <Step title="Regenerate your key with Copper Recovery">
+    Copper Recovery needs any two of the three shards — the one CoinCover released, together with your own (or one from your Copper Account Manager). Upload both shard files, enter the password protecting each, and the tool generates the private key for your wallet addresses in seconds.
+  </Step>
+  <Step title="Withdraw your assets">
+    Use the generated private key to move your assets — import it into another wallet app, or use it to sign a transaction out of your Copper Vault. 
+  </Step>
+</Steps>
+
+<Card title="Recover key material through CoinCover Control" icon="key" href="/guides/control/recover-key-material">
+  The step-by-step recovery walkthrough in Control — raising the request, gathering approvals, and collecting the released material.
+</Card>
+
+## What's next
+
+<CardGroup cols={2}>
+  <Card title="BitGo" icon="wallet" href="/partner-guides/bitgo">
+    Backup and recovery across the BitGo self-custody wallet, including its key-ceremony flow.
+  </Card>
+
+  <Card title="Fordefi" icon="shield-halved" href="/partner-guides/fordefi">
+    The console-based backup flow and key-return recovery for the Fordefi self-custody MPC wallet.
+  </Card>
+
+  <Card title="Fireblocks" icon="layer-group" href="/partner-guides/fireblocks">
+    The workspace and device-share backup flows for the Fireblocks MPC workspace.
+  </Card>
+
+  <Card title="Partners overview" icon="handshake" href="/partner-guides/overview">
+    All CoinCover partner integrations.
+  </Card>
+</CardGroup>

@@ -1,0 +1,276 @@
+---
+title: "CLI integration guide"
+---
+
+The CoinCover Key Vault CLI replaces the legacy `coincover/crypt` Docker image. It lets you:
+
+- **Back up** private key files by encrypting them on your machine and uploading only ciphertext to CoinCover.
+- **Recover** key material locally after CoinCover Control has released a recovery package and your approval policy is satisfied.
+
+Your plaintext key material never leaves your machine during backup. Recovery is performed entirely on your machine once you have the released files — no network is required for the recover flow.
+
+The CLI is **interactive**: there are no subcommands today. Run the binary, choose an action from the menu, and follow the prompts. Many steps include a **? Help** option with more context.
+
+For the full menu, environments, size limits, config, and troubleshooting tables, see the [CLI reference](/institutional-recovery/cli-reference).
+
+## What you need before you start
+
+### For every session
+
+| Requirement | Notes |
+| --- | --- |
+| **API key** | Obtain from CoinCover as part of your onboarding or Control setup. The CLI stores one key per environment on your machine. |
+| **Supported platform** | macOS (Intel or Apple Silicon), Linux (x86\_64 or ARM64), or Windows x64. |
+
+### For backup
+
+| Requirement | Notes |
+| --- | --- |
+| **Network** | The CLI calls CoinCover's keys API for the environment you select. |
+| **Backup name** and **Backup ID** | You enter these during the flow; they identify the package in CoinCover. |
+| **Control ID** | Your CoinCover Control workspace identifier for this backup. |
+| **Key file** | **RSA \+ passphrase:** up to **401 bytes**. **RSA only:** up to **445 bytes**. **Envelope encryption \+ passphrase:** above **470 bytes**, up to **10 MB** (ZIP upload). |
+| **Passphrase custody** (RSA \+ passphrase and envelope) | By default the CLI generates a strong passphrase; you can create your own that meets the CLI rules. You must save it outside the CLI. CoinCover cannot recover it. |
+
+### For recovery
+
+| Requirement | Notes |
+| --- | --- |
+| **Recovery package** | From CoinCover Control after your approval policy on the original backup is satisfied. |
+| **RSA private key** | Unencrypted PKCS#8 PEM (`-----BEGIN PRIVATE KEY-----`). If the package is GPG-wrapped, **decrypt with GPG outside the CLI first**, then point the CLI at the decrypted PEM. |
+| **Encrypted backup file** | Small backups: RSA ciphertext (binary or base64). Envelope backups: **ZIP package** from the recovery package. |
+| **Backup passphrase** (RSA \+ passphrase and envelope backups) | The passphrase saved at backup time — not your CoinCover Control login. |
+
+On **macOS**, install with Homebrew (recommended). On **Linux** and **Windows**, download release binaries.
+
+## Install and run
+
+<Tabs>
+  <Tab title="macOS (Homebrew)">
+    The public tap is [**coincover/key-vault-tap**](https://github.com/coincover/key-vault-tap). Binaries are Developer ID signed and notarized.
+
+    ```bash
+    brew tap coincover/key-vault-tap https://github.com/coincover/key-vault-tap.git
+    brew install coincover
+    coincover
+    ```
+
+    Upgrade when a new version is published:
+
+    ```bash
+    brew update
+    brew upgrade coincover
+    ```
+
+    Release assets and checksums: [github.com/coincover/key-vault-tap/releases](https://github.com/coincover/key-vault-tap/releases).
+  </Tab>
+  <Tab title="macOS (manual)">
+    1. Download `cc-cli-macos-arm64-v0.x.x` (bare binary) or `cc-cli-macos-arm64-v0.x.x.tar.gz` for your chip from [key-vault-tap releases](https://github.com/coincover/key-vault-tap/releases).
+    2. Run the bare binary:
+       ```bash
+       chmod +x cc-cli-macos-arm64-v0.x.x
+       ./cc-cli-macos-arm64-v0.x.x
+       ```
+       Or from a tarball:
+       ```bash
+       tar xzf cc-cli-macos-arm64-v0.x.x.tar.gz
+       ./coincover
+       ```
+    3. **Optional:** install on your `PATH`:
+       ```bash
+       sudo mv coincover /usr/local/bin/coincover
+       ```
+
+    <Note>
+      **Gatekeeper:** macOS binaries from official releases are Developer ID signed and notarized. If macOS still blocks the app, open **System Settings → Privacy & Security** and allow the binary, or right-click the file → **Open** once to confirm.
+    </Note>
+  </Tab>
+  <Tab title="Linux">
+    1. Download `cc-cli-linux-x64-v0.x.x` or `cc-cli-linux-arm64-v0.x.x`.
+    2. Make it executable and run:
+       ```bash
+       chmod +x cc-cli-linux-x64-v0.x.x
+       ./cc-cli-linux-x64-v0.x.x
+       ```
+    3. **Optional:** install to a directory on your `PATH`:
+       ```bash
+       sudo mv cc-cli-linux-x64-v0.x.x /usr/local/bin/coincover
+       coincover
+       ```
+  </Tab>
+  <Tab title="Windows">
+    1. Download `cc-cli-win-x64-v0.x.x.exe`.
+    2. Run from PowerShell or Command Prompt:
+       ```powershell
+       .\cc-cli-win-x64-v0.4.1.exe
+       ```
+    3. **Optional:** add the folder containing the `.exe` to your user or system `PATH`, or copy the file to a folder already on `PATH`.
+  </Tab>
+</Tabs>
+
+Tarballs contain an executable named `coincover` at the archive root. Bare binaries (no extension) use the `cc-cli-*` filename — rename to `coincover` when adding to your `PATH`. Each release may include `checksums.txt` (and Cosign signature files on internal releases) for verification. 
+
+### Optional: verify checksums
+
+From the directory where you downloaded the release assets:
+
+```bash
+cd /path/to/downloads
+sha256sum -c checksums.txt
+```
+
+On macOS without GNU coreutils, use `shasum -a 256` and compare manually against `checksums.txt`.
+
+### Running the CLI
+
+- No command-line flags are required. Starting the binary shows **CoinCover Key Vault** and the main menu.
+- Use **arrow keys** and **Enter** to select options.
+- Press **Esc** or **Ctrl\+C** to cancel the current prompt (individual flows exit cleanly where noted below).
+- Choose **? Help** on many screens for in-app explanations.
+
+## First-time setup
+
+The first time you run the CLI (or whenever required settings are missing), you are guided through setup before the main menu appears.
+
+<Steps>
+  <Step title="Environment">
+    Choose which CoinCover API environment to use — `dev`, `staging`, `uat`, or `prod`. Each maps to a specific API host. Environments that already have a saved API key are marked **(key saved)** in the list.
+  </Step>
+  <Step title="API key">
+    Enter your partner API key for the selected environment which was provided by CoinCover as part of onboarding. Input is masked. The key is saved locally for that environment so you are not prompted again unless you switch environments or update the key from the menu.
+  </Step>
+  <Step title="API key">
+    Enter your partner API key for the selected environment which was provided by CoinCover as part of onboarding. Input is masked. The key is saved locally for that environment so you are not prompted again unless you switch environments or update the key from the menu.
+  </Step>
+  <Step title="User ID and Customer name">
+    Enter defaults used on future backups:
+
+    - **User ID** — maps to `user_identifier` in the partner API.
+    - **Customer name** — maps to `organisation.customer_name`.
+
+    You can override these for a single backup later, or change defaults from the main menu.
+  </Step>
+</Steps>
+
+After setup, the CLI prints the active **environment** (with API URL) and **saved identity** before each menu cycle. Settings are stored at `~/.coincover/config.json`.
+
+## Back up key material
+
+Choose **Back up key material** from the menu. The flow asks a series of questions, then encrypts and uploads. You can cancel with **Esc** / **Ctrl\+C** until you confirm on the review screen — declining review or cancelling earlier performs **no API calls**.
+
+<Steps>
+  <Step title="Identity for this backup">
+    The CLI shows your saved **User ID** and **Customer name** and asks **Use this User ID and Customer name for this backup?**
+
+    - **Yes** — use saved values for this run only.
+    - **No** — enter different values (fields are pre-filled). You may then choose **Save these as your default identity for future backups?**
+  </Step>
+  <Step title="HOT or COLD RSA key pair">
+    - **HOT key pair** — standard online backup; key is generated in CoinCover's online enclave.
+    - **COLD key pair** — air-gapped or offline-oriented workflows.
+
+    This choice is **permanent for this backup** — it cannot be changed afterward for the same package.
+  </Step>
+  <Step title="Protection mode">
+    - **RSA \+ passphrase (recommended)** — small files (up to **401 bytes**). Two layers; uploads via secure data; enclave checksum verified.
+    - **RSA only** — small files (up to **445 bytes**). One layer; no passphrase.
+    - **Envelope encryption \+ passphrase** — large files (**above 470 bytes**, up to **10 MB**). Passphrase plus DEK envelope; uploads a **ZIP** via secure file.
+
+    Default is RSA \+ passphrase. Use **? Help** on this screen for size limits and upload paths.
+  </Step>
+  <Step title="Backup name and Backup ID">
+    - **Backup name** — human-readable label (e.g. `q2-treasury-key`).
+    - **Backup ID** — package identifier (e.g. `p1`).
+  </Step>
+  <Step title="Key file">
+    An interactive file browser opens. The list supports **type-to-filter** and **↑↓** to choose; **`...`** means more names are off-screen. Select **`../`** **(Back)** to go up a directory, entries ending in **`/`** to enter folders, and a file to use it.
+
+    The file must be non-empty and within the size limit for your protection mode. Envelope mode requires files **larger than 470 bytes**.
+  </Step>
+  <Step title="Backup summary and Control ID">
+    A summary shows protection, names, file path, RSA key type, and identity. You are then prompted for **Control ID** (your workspace identifier in CoinCover Control). **You will receive a Control ID for each backup that you purchase from CoinCover.** The summary is shown again with Control ID included.
+  </Step>
+  <Step title="Backup summary and Control ID">
+    A summary shows protection, names, file path, RSA key type, and identity. You are then prompted for **Control ID** (your workspace identifier in CoinCover Control). **You will receive a Control ID for each backup that you purchase from CoinCover.** The summary is shown again with Control ID included.
+  </Step>
+  <Step title="Passphrase (RSA + passphrase and envelope)">
+    1. Choose **CLI-generated passphrase (recommended)** or **Create my own passphrase** (default: generated).
+    2. **Generated path:** the CLI shows a random passphrase in a **Save this passphrase** note with important warnings, then asks you to **type or paste the same passphrase** again to confirm you saved it.
+    3. **Custom path:** a **Backup passphrase rules** note lists requirements (16–128 characters, at least three character classes, at least 10 distinct characters, no common passwords or obvious patterns). You enter the passphrase twice via masked prompts; the CLI validates each entry.
+
+    **RSA only** skips this step.
+  </Step>
+  <Step title="Review and upload">
+    A review panel lists all choices. **Proceed?** defaults to **No**. If you confirm **Yes**, the CLI:
+
+    1. Allocates a CoinCover HOT or COLD RSA-4096 key via the API.
+    2. Encrypts locally (small-file: full RSA wrap \+ secure data; envelope: ZIP package \+ secure file).
+    3. For small-file backups, verifies the server checksum; envelope file uploads do not use the same checksum step.
+
+    On success you see **backup\_id**, **key\_id**, key type, environment, backup name, and the path to a saved **receipt** under `~/.coincover/receipts/`. **Keep your passphrase safe** if you used a passphrase mode.
+  </Step>
+  <Step title="Review and upload">
+    A review panel lists all choices. **Proceed?** defaults to **No**. If you confirm **Yes**, the CLI:
+
+    1. Allocates a CoinCover HOT or COLD RSA-4096 key via the API.
+    2. Encrypts locally (small-file: full RSA wrap \+ secure data; envelope: ZIP package \+ secure file).
+    3. For small-file backups, verifies the server checksum; envelope file uploads do not use the same checksum step.
+
+    On success you see **backup\_id**, **key\_id**, key type, environment, backup name, and the path to a saved **receipt** under `~/.coincover/receipts/`. **Keep your passphrase safe** if you used a passphrase mode.
+  </Step>
+</Steps>
+
+## Recover key material
+
+Choose **Recover key material** from the menu. This flow is **local only** — it does not call the CoinCover API after you have the files. You need a recovery package from CoinCover Control **after** the approval policy on the original backup is satisfied.
+
+<Note>
+  If files are still GPG-encrypted inside the recovery package, decrypt them with GPG **outside** the CLI first. The CLI expects a **decrypted PEM** RSA private key (not the encrypted backup blob), and the **encrypted backup artifact** from backup time — for envelope backups this is the **`…-backup-package.zip`** file (binary or base64), not the individual files inside an extracted folder.
+</Note>
+
+<Steps>
+  <Step title="RSA private key">
+    Browse to the PKCS#8 PEM private key (`-----BEGIN PRIVATE KEY-----` … `-----END PRIVATE KEY-----`).
+  </Step>
+  <Step title="Encrypted backup file">
+    Browse to the ciphertext file. For **envelope** backups, select the **ZIP** in the recovery folder (e.g. `p1-backup-package.zip`), not `payload.enc` or `wrapped_dek.bin` from inside an extracted copy.
+
+    The CLI detects **base64** (whitespace trimmed, then decoded) or **binary** automatically. It does **not** ask which backup type you used — it detects **ZIP** (envelope) or, for small files, inspects the inner buffer after RSA unwrap.
+  </Step>
+  <Step title="Recovery summary">
+    A summary shows private key path, ciphertext path, format, and either **Package format: Envelope … (ZIP)** with **Recovered as** `recovered_<your-file.ext>`, or **Inner format** for small-file backups.
+  </Step>
+  <Step title="Passphrase (RSA + passphrase and envelope)">
+    A note explains this is the **backup passphrase** from when you created the backup — not your CoinCover Control password.
+
+    - Enter the passphrase.
+    - Wrong passphrase: up to **3 attempts** with warnings; then you return to the main menu.
+    - **RSA only** skips this step.
+  </Step>
+  <Step title="Output file">
+    Recovered plaintext is written next to the encrypted file:
+
+    - Small-file (`secure/data`): `recovered_<encrypted filename>` — e.g. `recovered_validator_key.txt`.
+    - Envelope (`secure/file` ZIP): `recovered_<original filename>` from the ZIP manifest — e.g. `recovered_photo.jpeg`.
+
+    The recovered file is **not** a ZIP — do not unzip it. Older envelope packages without `original_filename` in the manifest may still use `recovered_<backup-package.zip>`; rename the extension manually or re-backup with a current CLI. If the output file already exists, the CLI asks whether to overwrite (default **No**).
+  </Step>
+</Steps>
+
+## Managing settings
+
+**Switch environment / API key** — use this before backup work when you need a different CoinCover environment or a new API key. The CLI shows the active environment and API URL after switching.
+
+**Set / update saved User ID & Customer name** — changes global defaults in `~/.coincover/config.json`. They apply across all environments until you change them again. Each backup can still override identity when prompted.
+
+## What's next
+
+<CardGroup cols={2}>
+  <Card title="CLI reference" href="/institutional-recovery/cli-reference">
+    Environments, menu, size limits, config, receipts, logging, and troubleshooting.
+  </Card>
+
+  <Card title="Add CoinCover as a backup key" href="/institutional-recovery/add-a-backup-key">
+    Use a secp256k1 or ed25519 key as the backup key in your multi-sig or MPC wallet.
+  </Card>
+</CardGroup>

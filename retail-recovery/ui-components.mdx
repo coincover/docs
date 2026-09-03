@@ -1,0 +1,71 @@
+---
+title: "UI components"
+description: "Embedding the Identity SDK in your wallet app for retail recovery."
+---
+
+The retail recovery flow includes an identity verification step that runs on your customer's device. CoinCover orchestrates the inquiry on the back end; your wallet UI mounts the **Identity SDK** to deliver the verification experience itself.
+
+This page covers how the Identity SDK fits into a CoinCover integration. For the SDK's own contract — install commands, methods, props, lifecycle — Our identity provider documentation is the source of truth.
+
+<Note>
+  We have an external IDV provider. There is no CoinCover-supplied identity SDK. You install our Identity SDK in your wallet app and pass it the inquiry ID CoinCover gives you.
+</Note>
+
+## How the pieces fit together
+
+<Steps>
+  <Step title="Your backend asks CoinCover for an inquiry">
+    Call `POST /v1/verification/start` with the customer's identifier. CoinCover creates the inquiry with the identity provider and returns a `verification_id` — that's the Identity inquiry ID.
+  </Step>
+  <Step title="Your wallet UI mounts the identity SDK">
+    Hand the `verification_id` to your front end and use it to initialise Identity's SDK. The SDK takes over the screen and runs the verification flow on the customer's device.
+  </Step>
+  <Step title="The customer completes verification">
+    Facial liveness, document checks, and the rest of the verification stack run inside the Identity SDK. Our identity provider reports the outcome back to CoinCover.
+  </Step>
+  <Step title="CoinCover emits a webhook">
+    Your backend receives `inquiry.approved`, `inquiry.declined`, or one of the other inquiry events. **Drive your business logic from this webhook**, not from the Identity SDK's UI events.
+  </Step>
+</Steps>
+
+## What we provide vs our identity provider
+
+| CoinCover provides | Identity provider provides |
+| --- | --- |
+| The inquiry orchestration (creating, releasing, auditing) | The SDK that runs on the customer's device |
+| The webhook stream that drives your backend | The verification UI itself (liveness, document capture) |
+| The encrypted backup storage and recovery logic | The mechanism that initialises the SDK with your inquiry ID |
+
+You only contract with CoinCover. Identity provider sits behind the scenes — billing, commercial terms, and provisioning are all managed through CoinCover.
+
+## Source of truth for state
+
+The Identity SDK fires UI events as the customer moves through the verification screens — these are designed for your wallet's screen transitions, progress indicators, and animations. They're not the source of truth for business state.
+
+If a customer closes the browser mid-flow, those events stop firing. CoinCover's webhook stream is what tells you authoritatively whether the verification approved, declined, or expired. Build your release-the-recovery logic on the webhook, not the SDK event.
+
+## Branding and white-labelling
+
+The Identity SDK supports white-labelling — colours, copy, logo placement — within the verification screens themselves. Configuration is done at the inquiry-template level inside Identity provider; CoinCover provisions a template per partner that you can customise. Talk to your account manager to set this up before you start integration testing.
+
+The handoff to the Identity provider feels like a step inside your wallet rather than a detour to a third party. From the customer's perspective, the verification provider is described abstractly — they don't need to know which IDV provider sits behind the scenes.
+
+## Testing
+
+In sandbox, you can drive verification outcomes with the `x-override-status`[ header](/retail-recovery/testing). The Identity SDK still mounts and renders, but the inquiry resolves to whatever outcome you specify so you can exercise the approve, decline, expire, and review paths without real customers.
+
+## What's next
+
+<CardGroup cols={2}>
+  <Card title="Integration guide" href="/retail-recovery/integration-guide">
+    The full backup and recovery flow.
+  </Card>
+
+  <Card title="Testing & sandbox" href="/retail-recovery/testing">
+    Driving verification outcomes for development.
+  </Card>
+
+  <Card title="API reference" href="/retail-recovery/api-reference">
+    Every endpoint, request, and response.
+  </Card>
+</CardGroup>

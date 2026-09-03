@@ -1,0 +1,138 @@
+---
+title: "Vault sync"
+sidebarTitle: "Vault sync"
+description: "Link a Fireblocks workspace to CoinCover Control so the derivation paths for every vault and address are ready before a recovery is ever needed."
+icon: "arrows-rotate"
+---
+
+Vault sync links a Fireblocks workspace to CoinCover Control. Once it's linked, Control keeps its own record of every vault account and every wallet address in that workspace, and that record is what produces the **wallet derivation paths** returned inside a recovery package.
+
+The two backup flows on the [Fireblocks partner guide](/partner-guides/fireblocks) protect the **keys**. Vault sync protects the **derivation paths** — the record of how each vault and address was derived, which is what's needed to rebuild the accounts once the keys are back.
+
+It applies wherever CoinCover backs up a Fireblocks workspace: [Recover for Institutions](/institutional-recovery/overview) customers backing up their own workspace, and [wallet providers](/wallet-provider-recovery/overview) backing up their customers' on Fireblocks. It has no application to [retail recovery](/retail-recovery/overview), where there is no workspace to enumerate.
+
+Vault sync is optional, and strongly recommended at onboarding.
+
+## Why link it at onboarding
+
+If the workspace was never linked, a recovery still returns your keys. It does not return the derivation paths — nothing in the package records how your accounts were derived, so you would need to export a vault report from Fireblocks at recovery time, or rebuild every account by hand.
+
+A recovery is not something you get to repeat, and there is no way to add derivation paths to a package that has already been assembled. That is the whole argument for completing the link now rather than later.
+
+## At a glance
+
+|  |  |
+| --- | --- |
+| **Applies to** | Fireblocks workspaces backed up with CoinCover |
+| **Who sets it up** | An organisation owner, in CoinCover Control. CoinCover is not involved |
+| **Access needed** | A Fireblocks read-only (Viewer) API user, and its private key |
+| **What CoinCover reads** | Vault accounts, the assets in each, and the addresses under them. Nothing else |
+| **Refresh** | Once a day at a fixed time, plus on demand whenever you want it |
+| **Where you receive it** | Inside a workspace recovery package, as a CSV alongside the key material |
+
+<Note>
+  Vault sync is set up and refreshed in CoinCover Control. There are no vault sync endpoints in the API reference — it isn't something you build against.
+</Note>
+
+## Before you start
+
+You'll need three things in place:
+
+- **A Fireblocks partner relationship with CoinCover, and a workspace backup against it.** Vault sync is reached from that backup's page in Control, and the controls only appear where the backup's partner is Fireblocks.
+- **An Admin-level user in your Fireblocks workspace.** Creating an API user and uploading a CSR is an Admin-level action at Fireblocks. This is done at Fireblocks, not at CoinCover.
+- **An organisation owner account in CoinCover Control.** Owners link and change workspace credentials. Every other user in your organisation holds the Member role — a Member can trigger a refresh and browse the synced vaults and addresses, but cannot link or change credentials. The permission is organisation-wide rather than per backup.
+
+<Warning>
+  The read-only API user is created in the **Fireblocks console**, not in CoinCover Control. You then paste the credentials Fireblocks issues into Control.
+</Warning>
+
+## Set it up
+
+<Steps>
+  <Step title="Create a read-only API user in Fireblocks">
+    In the Fireblocks console, under developer settings, create an API user with the **Viewer** role — the lowest-privilege role that can list vaults and addresses.
+
+    <Note>
+      CoinCover reads nothing beyond vault accounts and addresses, but nothing at link time inspects the privilege level of the credentials you supply. Keeping the API user at Viewer is your control, not one CoinCover applies for you.
+    </Note>
+  </Step>
+  <Step title="Generate a certificate signing request">
+    Fireblocks issues the API key against a certificate signing request (CSR) that **you** generate, so the key pair originates on your own machine rather than at Fireblocks or at CoinCover.
+
+    Generate an RSA 4096-bit key pair and the CSR on your own machine:
+
+    ```bash
+    openssl req -new -newkey rsa:4096 -nodes -keyout api_private.key -out api_user.csr
+    ```
+
+    OpenSSL prompts for the certificate fields — Common Name (your name, or the API user's), Organisation, Country as a two-letter code, State, Locality, and Organisational Unit, which is optional. You end up with two files: `api_user.csr`, which goes to Fireblocks, and `api_private.key`, which stays with you.
+
+    Upload `api_user.csr` in the **CSR File** field as you create the API user in the Fireblocks console, and Fireblocks issues the **API key** against it.
+
+    Fireblocks documents this step at [Generate a CSR for an API user](https://developers.fireblocks.com/docs/generate-a-csr-for-an-api-user).
+  </Step>
+  <Step title="Link the workspace in CoinCover Control">
+    On the backup's page in Control, an organisation owner opens the credentials dialog and pastes the issued API key and the private key. Both are encrypted on arrival and only the encrypted form is stored.
+
+    Supply the private key exactly as it was issued against your CSR — complete, and unencrypted.
+  </Step>
+  <Step title="Run the first refresh">
+    Linking sets the workspace to pending. Trigger the first refresh from the same screen. It runs in the background rather than inside the request, and the page follows it and updates itself when it finishes.
+  </Step>
+  <Step title="Confirm the refresh succeeded">
+    Check the **refresh status and the refresh history**, not only that a refresh happened. Until a refresh has succeeded, there is nothing in the record to release at recovery.
+  </Step>
+  <Step title="Check the record looks right">
+    Control lists your vault accounts with their asset and address counts, and you can open a single vault to see its addresses. Compare this against Fireblocks.
+
+    This is the point to catch a workspace linked with credentials scoped to the wrong workspace — CoinCover cannot tell one of your workspaces from another, so any valid credentials will link and sync.
+  </Step>
+</Steps>
+
+## Keeping it current
+
+A refresh runs **automatically once a day, at a fixed time**. That time is set by CoinCover and is the same for every customer — there is no per-organisation cadence or window. You can also refresh **on demand** from Control at any time, as often as you like.
+
+Refreshes run in the background. Having triggered one, the page updates itself with the vault and address counts when it completes. A large workspace can take longer than the page waits, in which case Control tells you to check back — reload it once the refresh has had time to finish.
+
+Control shows the **recent refresh history** for your workspace, covering whether each was automatic or one you triggered, whether it succeeded, and how many vaults and addresses it found. Failures show the reason.
+
+CoinCover's record is cumulative: it keeps everything it has ever seen in the workspace, including vaults and addresses you later delete at Fireblocks, so those still appear in the derivation paths returned at recovery. Allow for that if you reorganise.
+
+## What CoinCover reads and stores
+
+**Reads:** your vault accounts, the assets held in each, and the addresses under each asset. Nothing else — no balances, no transactions, no transfer history, no policies, no users. CoinCover cannot initiate any movement of assets, and you can revoke the API user at Fireblocks whenever you choose.
+
+**Stores:** the vault accounts, with the identifier Fireblocks issued and the name you gave them there; the wallet addresses, with the asset, the address itself, its type, any tag and its index; the credentials you supplied, as ciphertext only; and one record per refresh showing whether it succeeded and how much it found.
+
+The credentials cannot be read back. They're encrypted the moment they arrive and only the encrypted form is kept, so no screen, interface or CoinCover person can return them. If you've lost your own copy, issue a new API user at Fireblocks and link again.
+
+## If you change or revoke credentials
+
+Saving new credentials overwrites the stored pair, returns the workspace to pending, and the next refresh re-reads the whole workspace from scratch. Your previously synced vaults and addresses are retained throughout, so nothing is lost from what CoinCover holds.
+
+Revoking the API user at Fireblocks does not remove anything from CoinCover. The record stays exactly as it was at the last successful refresh and continues to be used at recovery; it simply stops picking up anything new.
+
+## What you get at recovery
+
+Where the workspace has been synced, a [workspace recovery](/partner-guides/fireblocks#recovery) can return the derivation paths as a CSV alongside the key material — one row per address, giving the vault account and its name, the asset, the address, its type, any tag, and the hierarchical derivation path. The format is aligned to the Fireblocks Recovery Utility, so it can be imported rather than transcribed.
+
+## What's next
+
+<CardGroup cols={2}>
+  <Card title="Fireblocks" icon="layer-group" href="/partner-guides/fireblocks">
+    The workspace backup, the owner's device share backup, and both recovery flows.
+  </Card>
+
+  <Card title="Recover for Institutions" icon="building-columns" href="/institutional-recovery/overview">
+    How institutional recovery is integrated, gated and released.
+  </Card>
+
+  <Card title="Recover for Wallet Providers" icon="wallet" href="/wallet-provider-recovery/overview">
+    Backing up your own customers' wallets on a supported platform.
+  </Card>
+
+  <Card title="Testing" icon="flask" href="/institutional-recovery/testing">
+    Rehearsing a recovery before you need one.
+  </Card>
+</CardGroup>

@@ -1,0 +1,110 @@
+---
+title: "Create a GPG key pair"
+sidebarTitle: "Create a GPG key"
+description: "Generate the GPG key pair you use to encrypt a recovery, and decrypt the package CoinCover returns."
+icon: "lock"
+---
+
+When you recover key material through CoinCover Control, you supply a **GPG public key** with the request. CoinCover encrypts the recovered material to that key, so only the holder of the matching **private key** can open it. This guide shows you how to create the pair, hand the public key to CoinCover, and decrypt the package once it's returned.
+
+<Warning>
+  CoinCover never receives or holds your private key. If you lose the private key or its passphrase, the recovered material can't be opened — by you or by CoinCover — and you'd have to raise a new recovery. Decide who will hold the private key, and back it up, before you need it.
+</Warning>
+
+## Choose a tool
+
+GPG is an open standard with free tools for every platform:
+
+- **macOS** — [GPG Suite](https://gpgtools.org/), which installs the **GPG Keychain** app.
+- **Windows** — [Gpg4win](https://www.gpg4win.org/), which installs the **Kleopatra** app.
+- **Any platform** — the `gpg` command line.
+
+## Generate your key pair
+
+<Tabs>
+  <Tab title="macOS (GPG Keychain)">
+    <Steps>
+      <Step title="Install and open GPG Keychain">
+        Download GPG Suite from [gpgtools.org](https://gpgtools.org/), install it, and open the **GPG Keychain** app.
+      </Step>
+      <Step title="Create a new key">
+        Click **New** on the toolbar. Enter your name and the email address you want the key associated with, set a strong passphrase, and click **Create Key**.
+      </Step>
+      <Step title="Export the public key">
+        Right-click your new key in the list and choose **Export**. Make sure **Include secret key in exported file** is **unticked** — you're sending only the public half. Save the `.asc` file.
+      </Step>
+    </Steps>
+  </Tab>
+  <Tab title="Windows (Kleopatra)">
+    <Steps>
+      <Step title="Install and open Kleopatra">
+        Download Gpg4win from [gpg4win.org](https://www.gpg4win.org/), install it, and open **Kleopatra**.
+      </Step>
+      <Step title="Create a new key pair">
+        Choose **File → New Key Pair → Create a personal OpenPGP key pair**. Enter your name and email, set a strong passphrase, and click **Create**.
+      </Step>
+      <Step title="Export the public key">
+        Right-click your certificate and choose **Export** (not **Export Secret Keys**). Save the `.asc` file — this is your public key.
+      </Step>
+    </Steps>
+  </Tab>
+  <Tab title="Command line">
+    Generate the pair, following the prompts — choose RSA, 4096 bits, and set a passphrase:
+
+    ```bash
+    gpg --full-generate-key
+    ```
+
+    Export the public key to a file to send to CoinCover:
+
+    ```bash
+    gpg --armor --export you@example.com > coincover-public.asc
+    ```
+
+    Your private key stays in your local keyring. Back it up somewhere secure.
+  </Tab>
+</Tabs>
+
+## Give the public key to CoinCover
+
+When you [start a recovery request](/guides/control/recover-key-material), paste the public key or upload the exported `.asc` file. Control checks the key is valid before the request goes ahead.
+
+<Note>
+  Only ever share the **public** key. Your private key never leaves your machine and is never sent to CoinCover.
+</Note>
+
+## Decrypt the recovery package
+
+Once your recovery is approved and you've downloaded the package from Control, decrypt it with the private key you already hold. 
+
+<Tabs>
+  <Tab title="macOS">
+    In Finder, right-click the package CoinCover returned and choose **Services → OpenPGP: Decrypt File** (installed by GPG Suite). Enter your key passphrase when prompted. A decrypted copy is written alongside the original.
+  </Tab>
+  <Tab title="Windows">
+    In File Explorer, right-click the package and choose **Decrypt and verify**, or open **Kleopatra**, choose **Decrypt/Verify**, and select the file. Enter your passphrase. Kleopatra writes the decrypted output next to the file.
+  </Tab>
+  <Tab title="Command line">
+    ```bash
+    gpg --output recovery-decrypted --decrypt recovery-package.gpg
+    ```
+
+    Enter your passphrase when prompted. The decrypted material is written to the output file.
+  </Tab>
+</Tabs>
+
+<Note>
+  The package can only be opened on a machine that holds the private key matching the public key you supplied, by someone who knows its passphrase. In Control, any member with recovery permission can download the package — but only the holder of the private key can decrypt it. If a different person will collect and open it, make sure they hold that private key.
+</Note>
+
+## What's next
+
+<CardGroup cols={2}>
+  <Card title="Recover key material" icon="key" href="/guides/control/recover-key-material">
+    Where you supply this public key and collect the encrypted package.
+  </Card>
+
+  <Card title="Approve a recovery request" icon="circle-check" href="/guides/control/approve-recovery-request">
+    The approver's side of a recovery.
+  </Card>
+</CardGroup>

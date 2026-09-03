@@ -1,0 +1,161 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "theme": "mint",
+  "name": "Coincover Developer Docs",
+  "colors": {
+    "primary": "#3939EF",
+    "light": "#B59BFD",
+    "dark": "#B59BFD"
+  },
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Get Started",
+        "pages": [
+          "index"
+        ]
+      },
+      {
+        "tab": "Products",
+        "groups": [
+          {
+            "group": "Recover for Wallet Providers",
+            "pages": [
+              "wallet-provider-recovery/overview",
+              "wallet-provider-recovery/api-integration-guide",
+              "wallet-provider-recovery/testing"
+            ]
+          },
+          {
+            "group": "Recover for Institutions",
+            "pages": [
+              "institutional-recovery/overview",
+              "institutional-recovery/back-up-key-material",
+              "institutional-recovery/add-a-backup-key",
+              "institutional-recovery/cli-integration-guide",
+              "institutional-recovery/cli-reference",
+              "institutional-recovery/testing"
+            ]
+          },
+          {
+            "group": "Retail Recovery",
+            "pages": [
+              "retail-recovery/overview",
+              "retail-recovery/integration-guide",
+              "retail-recovery/ui-components",
+              "retail-recovery/testing"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Partners",
+        "pages": [
+          "partner-guides/overview",
+          "partner-guides/bitgo",
+          "partner-guides/fireblocks",
+          "partner-guides/utila",
+          "partner-guides/fordefi",
+          "partner-guides/copper"
+        ]
+      },
+      {
+        "tab": "Guides",
+        "groups": [
+          {
+            "group": "Using CoinCover Control",
+            "icon": "sliders",
+            "pages": [
+              "guides/control/get-started",
+              "guides/control/approval-control-list",
+              "guides/control/approve-list-change",
+              "guides/control/recover-key-material",
+              "guides/control/create-gpg-key",
+              "guides/control/approve-recovery-request",
+              "guides/vault-sync"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Wallet Provider API",
+            "openapi": "specs/wallet-provider.openapi.json"
+          },
+          {
+            "group": "Institutional API",
+            "openapi": "specs/institutional.openapi.json"
+          },
+          {
+            "group": "Retail API",
+            "openapi": "specs/retail.openapi.json"
+          }
+        ]
+      },
+      {
+        "tab": "Changelog",
+        "pages": [
+          "changelog/changelog"
+        ]
+      }
+    ]
+  },
+  "logo": {
+    "light": "/images/CC-Logo-Black.svg",
+    "dark": "/images/CC-Logo-White.svg",
+    "href": "https://www.coincover.com/"
+  },
+  "navbar": {
+    "links": [],
+    "primary": {
+      "type": "button",
+      "label": "Talk to us",
+      "href": "https://www.coincover.com/contact"
+    }
+  },
+  "footer": {
+    "socials": {
+      "linkedin": "https://www.linkedin.com/company/coincoverglobal/",
+      "x": "https://x.com/Coincoverglobal",
+      "website": "https://www.coincover.com"
+    }
+  },
+  "background": {
+    "color": {
+      "light": "#FFFFFF",
+      "dark": "#0E171B"
+    }
+  },
+  "fonts": {
+    "family": "Inter",
+    "weight": 400,
+    "heading": {
+      "family": "Inter",
+      "weight": 400
+    },
+    "body": {
+      "family": "Space Grotesk",
+      "weight": 400
+    }
+  },
+  "appearance": {
+    "strict": false
+  },
+  "errors": {
+    "404": {
+      "redirect": true
+    }
+  },
+  "favicon": "/images/Favicon32px.svg",
+  "metadata": {
+    "timestamp": false
+  },
+  "redirects": [
+    {
+      "source": "/institutional-recovery/api-integration-guide",
+      "destination": "/wallet-provider-recovery/api-integration-guide"
+    }
+  ]
+}

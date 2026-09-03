@@ -1,0 +1,572 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Recover for Wallet Providers — Partner Key Service API",
+    "description": "Partner Key Service for wallet providers integrating CoinCover under the hood of their platform to back up their customers' wallets. All endpoints live under /v1/partner/* and require organisation and package metadata. HOT vs COLD is selected with the key_environment parameter at assignment time, not via the URL path. Key generation and storage use AWS Nitro Enclaves for hardware-isolated cryptographic operations.",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://service.uat-keys.coincover.com",
+      "description": "Sandbox (UAT)"
+    },
+    {
+      "url": "https://service.keys.coincover.com",
+      "description": "Production — confirm host with your account manager"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "Keys",
+      "description": "Generate, assign, and verify cryptographic keys."
+    },
+    {
+      "name": "Backups",
+      "description": "Store and verify encrypted backup data and files."
+    }
+  ],
+  "paths": {
+    "/v1/partner/keys": {
+      "post": {
+        "summary": "Partner - Assign a new key with environment specification",
+        "description": "Creates a new key pair with the enclave, shards the private key, and securely stores the encrypted key shards. Includes key environment specification: HOT (online generation/storage) or COLD (offline generation/storage). Partner-only endpoint.",
+        "operationId": "partnerAssignKey",
+        "tags": ["Keys"],
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "description": "Bearer token for authentication. Can be either a JWT token or API key.",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "Key assignment details with key environment specification",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PartnerAssignKeyRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Key successfully assigned",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PartnerAssignKeyResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request parameters",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Token lacks partner-endpoint scope",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Key already assigned for this user and organisation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/partner/secure/data": {
+      "post": {
+        "summary": "Partner - Store secure encrypted data",
+        "description": "Stores base64-encoded encrypted data with checksum validation and padding type specification. The data is verified using the enclave before storage. Partner-only endpoint. The checksum is required and must be the SHA-256 of the plaintext.",
+        "operationId": "partnerStoreSecureData",
+        "tags": ["Backups"],
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "description": "Bearer token for authentication. Can be either a JWT token or API key.",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "Secure data and metadata",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PartnerSecureDataRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Secure data successfully stored",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SecureDataResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request parameters or verification failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Key or user not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/partner/secure/file": {
+      "post": {
+        "summary": "Partner - Store secure encrypted files",
+        "description": "Stores encrypted files securely. The key environment is determined from the provided key. The file must already be encrypted on the partner side; CoinCover applies no additional server-side encryption. Maximum payload 10MB. Partner-only endpoint.",
+        "operationId": "partnerStoreSecureFile",
+        "tags": ["Backups"],
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "description": "Bearer token for authentication. Can be either a JWT token or API key.",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "Secure file and metadata",
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/PartnerSecureFileRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Secure file successfully stored",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SecureFileResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request parameters or verification failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Payload too large (over 10MB)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Unsupported media type",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "PartnerAssignKeyRequest": {
+        "type": "object",
+        "required": [
+          "user_identifier",
+          "key_type",
+          "key_environment",
+          "organisation",
+          "package"
+        ],
+        "properties": {
+          "user_identifier": {
+            "type": "string",
+            "description": "Unique identifier of the user"
+          },
+          "key_type": {
+            "type": "string",
+            "enum": [
+              "rsa4096",
+              "secp256k1",
+              "ed25519"
+            ],
+            "description": "Type of cryptographic key to generate. rsa4096 for encryption of recovery material; secp256k1 or ed25519 for blockchain backup signers."
+          },
+          "key_environment": {
+            "type": "string",
+            "enum": [
+              "HOT",
+              "COLD"
+            ],
+            "description": "Key environment specification - HOT (online generation) or COLD (offline generation)"
+          },
+          "organisation": {
+            "type": "object",
+            "description": "Organisation metadata",
+            "properties": {
+              "customer_id": {
+                "type": "string",
+                "description": "Unique identifier for the organisation"
+              },
+              "customer_name": {
+                "type": "string",
+                "description": "Name of the organisation customer"
+              }
+            }
+          },
+          "package": {
+            "type": "object",
+            "description": "Package metadata",
+            "properties": {
+              "package_id": {
+                "type": "string",
+                "description": "External package ID assigned to the key"
+              },
+              "package_name": {
+                "type": "string",
+                "description": "Name of the package"
+              }
+            }
+          },
+          "sign_with": {
+            "type": "array",
+            "description": "Optional list of context fields to bind into the enclave signature. When present, the enclave signs a JCS-canonical (RFC 8785) JSON payload built from these fields plus the public_key (always included), returned as signed_payload, so a verified signature attests to the business context the key was issued for — not just the key bytes. Do not list public_key here; it is included implicitly.",
+            "items": {
+              "type": "string",
+              "enum": [
+                "external_customer_id",
+                "external_package_id",
+                "pulled_by_id",
+                "pulled_by_type",
+                "user_id",
+                "key_id",
+                "key_fingerprint"
+              ]
+            }
+          }
+        }
+      },
+      "PartnerAssignKeyResponse": {
+        "type": "object",
+        "properties": {
+          "key_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Unique identifier for the key"
+          },
+          "public_key": {
+            "type": "string",
+            "description": "Public key in hex format"
+          },
+          "signature": {
+            "type": "string",
+            "description": "Signature of the key in base64 format, produced by the generating enclave. Verify against your CoinCover verification key before encrypting recovery material. When sign_with is supplied the signature is computed over signed_payload; otherwise it covers the public key."
+          },
+          "signed_payload": {
+            "type": "string",
+            "description": "JCS-canonical (RFC 8785) JSON string that was signed — object keys sorted, always including public_key alongside the requested context fields. Returned only when sign_with was supplied. Verify the signature over these exact bytes rather than a re-serialised copy."
+          },
+          "signed_fields": {
+            "type": "array",
+            "description": "The sign_with field names that were included, in the order requested (public_key is not listed). Confirm this contains every field you expected before trusting the binding.",
+            "items": {
+              "type": "string"
+            }
+          },
+          "customer_id": {
+            "type": "string",
+            "nullable": true,
+            "description": "External customer identifier (e.g. organisation customer ID)"
+          },
+          "package_id": {
+            "type": "string",
+            "nullable": true,
+            "description": "External package identifier (e.g. workspace/package ID)"
+          },
+          "metadata": {
+            "type": "object",
+            "description": "Optional metadata describing the associated organisation and package",
+            "properties": {
+              "customer_name": {
+                "type": "string",
+                "nullable": true,
+                "description": "Human-readable name of the customer or organisation"
+              },
+              "package_name": {
+                "type": "string",
+                "nullable": true,
+                "description": "Human-readable name of the associated package or workspace"
+              }
+            }
+          }
+        }
+      },
+      "PartnerSecureDataRequest": {
+        "type": "object",
+        "required": [
+          "public_key",
+          "checksum",
+          "data"
+        ],
+        "properties": {
+          "public_key": {
+            "type": "string",
+            "pattern": "^[0-9a-fA-F]+$",
+            "minLength": 32,
+            "maxLength": 4096,
+            "description": "Public key in hex format used to encrypt the data"
+          },
+          "checksum": {
+            "type": "string",
+            "pattern": "^[a-fA-F0-9]{64}$",
+            "description": "SHA-256 checksum of the original plaintext for verification (required for partner endpoint)"
+          },
+          "data": {
+            "type": "string",
+            "format": "base64",
+            "description": "Base64-encoded encrypted data"
+          },
+          "padding_type": {
+            "type": "string",
+            "enum": [
+              "OAEP"
+            ],
+            "default": "OAEP",
+            "description": "Padding type used for encryption"
+          },
+          "metadata": {
+            "type": "object",
+            "description": "Optional metadata about the data",
+            "properties": {
+              "description": {
+                "type": "string",
+                "description": "Human-readable description of the data"
+              },
+              "content_type": {
+                "type": "string",
+                "description": "MIME type of the original data"
+              },
+              "original_filename": {
+                "type": "string",
+                "description": "Original filename of the data"
+              }
+            }
+          }
+        }
+      },
+      "SecureDataResponse": {
+        "type": "object",
+        "properties": {
+          "backup_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Unique identifier for the stored backup"
+          },
+          "checksum": {
+            "type": "string",
+            "description": "SHA-256 checksum that was verified"
+          },
+          "data_size": {
+            "type": "integer",
+            "description": "Size of the encrypted data in bytes"
+          },
+          "backup_type": {
+            "type": "string",
+            "enum": [
+              "data"
+            ],
+            "description": "Type of backup (always 'data' for secure-data endpoint)"
+          },
+          "metadata": {
+            "type": "object",
+            "description": "Combined metadata including original metadata"
+          }
+        }
+      },
+      "PartnerSecureFileRequest": {
+        "type": "object",
+        "required": [
+          "public_key",
+          "file"
+        ],
+        "properties": {
+          "public_key": {
+            "type": "string",
+            "pattern": "^[0-9a-fA-F]+$",
+            "minLength": 32,
+            "maxLength": 4096,
+            "description": "Public key in hex format used to encrypt the file"
+          },
+          "file": {
+            "type": "string",
+            "format": "binary",
+            "description": "Encrypted file to upload (e.g. a ZIP archive)"
+          },
+          "metadata": {
+            "type": "object",
+            "description": "Optional metadata about the file",
+            "properties": {
+              "description": {
+                "type": "string",
+                "description": "Human-readable description of the file"
+              },
+              "content_type": {
+                "type": "string",
+                "description": "MIME type of the original file"
+              },
+              "original_filename": {
+                "type": "string",
+                "description": "Original filename of the file"
+              }
+            }
+          }
+        }
+      },
+      "SecureFileResponse": {
+        "type": "object",
+        "properties": {
+          "backup_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Unique identifier for the stored file"
+          },
+          "backup_type": {
+            "type": "string",
+            "enum": [
+              "file"
+            ],
+            "description": "Type of backup (always 'file' for secure-file endpoint)"
+          },
+          "metadata": {
+            "type": "object",
+            "description": "Combined metadata including original metadata"
+          }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "Error message"
+          },
+          "error": {
+            "type": "string",
+            "description": "Error type"
+          }
+        }
+      },
+      "Authorization": {
+        "type": "string"
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "description": "Bearer token authentication. Can be either a JWT token or API key.",
+        "type": "http",
+        "scheme": "bearer"
+      }
+    }
+  }
+}

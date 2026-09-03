@@ -1,0 +1,130 @@
+---
+title: "Add a backup key"
+---
+
+This guide covers using a CoinCover backup key — `secp256k1` or `ed25519`, depending on your chain — as the **backup key** in your own multi-sig wallet. CoinCover generates and holds the private key inside its enclave and signs only at recovery — so a lost or compromised key on your side never means lost assets.
+
+If instead you want to encrypt recovery material and store the ciphertext with us, see [Back up key material.](/institutional-recovery/back-up-key-material)
+
+<Note>
+  The worked example below is the `secp256k1` / BIP32 case. `ed25519` keys (used by chains such as Solana) are also supported as backup keys, but they follow their chain's own hierarchical derivation scheme rather than BIP32 — the chain-code and xpub assembly steps don't apply. The assign, store, verify, and recovery shape is otherwise the same; talk to your account manager for the `ed25519` derivation specifics.
+</Note>
+
+## The xpub challenge (secp256k1)
+
+Most multi-sig platforms expect a BIP32 extended public key (xpub) for each key in the wallet. An xpub is `(compressed public key + 32-byte chain code)` plus BIP32 metadata. CoinCover's enclave returns the compressed public key but not a chain code, so there's no native xpub — you supply the chain code, assemble the xpub yourself, and store the chain code back with CoinCover so it's available at recovery.
+
+## Step 1 — Authenticate
+
+Authenticate with a Bearer token in the `Authorization` header — a JWT or a long-lived API key.
+
+```bash
+export COINCOVER_API_KEY="<your-jwt-or-api-key>"
+export COINCOVER_BASE_URL="https://service.uat-keys.coincover.com"
+```
+
+## Step 2 — Assign the signer key
+
+Call `POST /v1/keys` with `key_type: "secp256k1"` (or `"ed25519"` for chains that use it). CoinCover generates the key pair in the enclave and returns the compressed public key (hex) plus a `signature`. The private key never leaves the enclave.
+
+```bash
+curl -X POST "$COINCOVER_BASE_URL/v1/keys" \
+  -H "Authorization: Bearer $COINCOVER_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "user_identifier": "treasury-wallet-01",
+    "key_type": "secp256k1",
+    "key_environment": "COLD"
+  }'
+```
+
+Verify the returned `signature` against your CoinCover verification key before continuing. If it fails, treat the response as untrusted and escalate before building the wallet.
+
+### Optionally, bind business context into the signature
+
+You can also bind business context into that signature so it attests to _which_ wallet or customer the key is for, not just the key bytes. Pass a `sign_with` array on the request and the enclave signs the fields you name alongside the `public_key`. For a backup signer the useful fields are `key_fingerprint` / `public_key` and `external_customer_id`: `key_fingerprint` is the SHA-256 of the compressed public key the enclave issued, and `public_key` is always in the payload anyway, so together with `external_customer_id` the signature ties that enclave-issued key to the customer it's for. The chain code you add when assembling the xpub is outside this signature — store and track it separately. Every field you list must resolve to a value, or the request returns a `400`.
+
+The request shape, the `signed_payload`/`signed_fields` response, and a verification snippet are all in [Back up key material](/institutional-recovery/back-up-key-material#optionally-bind-business-context-into-the-signature) — the mechanics are identical here.
+
+## Step 3 — Generate a chain code
+
+Generate a random 32-byte chain code with a CSPRNG.
+
+```typescript Node
+import crypto from "node:crypto";
+const chainCode = crypto.randomBytes(32); // 32 bytes from a CSPRNG
+```
+
+## Step 4 — Assemble the xpub
+
+Build a BIP32 xpub from the enclave's compressed public key plus your chain code. This is the backup key xpub you'll register with your wallet platform.
+
+## Step 5 — Store the chain code with CoinCover
+
+The chain code is recovery-critical: without it, the private key alone can't derive child keys. Store it with CoinCover so it's available at recovery.
+
+<Steps>
+  <Step title="Assign an encryption key">
+    `POST /v1/keys` with `key_type: "rsa4096"` to get an encryption public key.
+  </Step>
+  <Step title="Encrypt the chain code">
+    RSA-OAEP encrypt a small payload such as `{ chainCode, publicKey, coin, label }` with that public key (SHA-256, as in [Back up key material](/institutional-recovery/back-up-key-material)).
+  </Step>
+  <Step title="Store the ciphertext">
+    `POST /v1/secure/data` with the ciphertext and plaintext checksum. Keep the returned `backup_id`.
+  </Step>
+</Steps>
+
+## Step 6 — Register the backup key with your wallet platform
+
+Register the assembled xpub as the **backup key** in your wallet, following your platform's own key-ceremony process. The exact API calls vary by platform, but the shape is consistent:
+
+<Steps>
+  <Step title="Generate your own keys">
+    Create the keys you control locally (e.g. your primary signing key), following your platform's guidance.
+  </Step>
+  <Step title="Register all keys for the wallet">
+    Register your own public key(s), the CoinCover backup xpub from step 4, and any platform-held key, per your wallet's multi-sig scheme.
+  </Step>
+  <Step title="Complete the key ceremony">
+    Run your platform's key ceremony to bind the keys into the wallet.
+  </Step>
+</Steps>
+
+<Note>
+  You only ever persist the key material **you** control, in your own secrets store. The backup private key lives solely in CoinCover's enclave — never store it, and don't create empty placeholders for it.
+</Note>
+
+## Step 7 — Record references
+
+In your own database, store the references you'll need at recovery time:
+
+- `coincoverBackup.keyId` — the signer key ID from step 2
+- `coincoverBackup.backupId` — the chain-code backup ID from step 5
+
+## Step 8 — Round-trip verify before production
+
+Also confirm the key and chain-code backup with the self-service `verify` endpoints:
+
+```bash
+curl "$COINCOVER_BASE_URL/v1/keys/$KEY_ID/verify" \
+  -H "Authorization: Bearer $COINCOVER_API_KEY"
+curl "$COINCOVER_BASE_URL/v1/backups/$BACKUP_ID/verify" \
+  -H "Authorization: Bearer $COINCOVER_API_KEY"
+```
+
+## Step 9 — Test before you ship
+
+Walk the backup-key scenarios in the [testing page](/institutional-recovery/testing), including a sandbox recovery that reconstructs the backup key from the enclave key plus the stored chain code and signs at your wallet's derivation path.
+
+## What's next
+
+<CardGroup cols={2}>
+  <Card title="Back up key material" href="/institutional-recovery/back-up-key-material">
+    Encrypt recovery material client-side and store it with CoinCover.
+  </Card>
+
+  <Card title="API reference" href="/institutional-recovery/api-reference">
+    Every endpoint, request, and response.
+  </Card>
+</CardGroup>

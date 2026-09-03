@@ -1,0 +1,66 @@
+---
+title: "Recover key material through CoinCover Control"
+sidebarTitle: "Recover key material"
+description: "Get your backed-up key material released — raise the request, provide a GPG key, and collect the material once your approvers have approved it."
+icon: "key"
+---
+
+Recovery is how your organisation gets its backed-up key material released when a key is lost or compromised. It runs through named approvers in CoinCover Control — never automatically, and never by one person alone. Anyone in your organisation can start a recovery, but nothing is released until the backup's Access Control List (ACL) has approved it.
+
+<Warning>
+  Recovery is a high-stakes operation, and every recovery is recorded. Start one only when there's a genuine need.
+</Warning>
+
+## Before you start
+
+- **Your ACL is ready.** The backup needs an established Access Control List of at least three members. See [Set up your Access Control List](/guides/control/approval-control-list).
+- **A GPG key pair you control.** You provide the public key when you raise the request, and you need the matching private key to open the recovered material — so have the pair ready before you begin. If you don't have one yet, see [Create a GPG key pair](/guides/control/create-gpg-key).
+- **Know whether the key is held online or offline.** Online (hot) and offline (cold) keys release differently, so it's worth confirming which of your keys is which before you need to recover.
+
+## Run a recovery
+
+<Steps>
+  <Step title="Start the request">
+    On the backup you need to recover, start a recovery request and select the package or packages to recover.
+  </Step>
+  <Step title="Provide your GPG public key">
+    Paste or upload your GPG public key. The recovered material is encrypted to it, so only the holder of the matching private key can open it. Control confirms the key is valid before the request goes ahead. New to GPG? See [Create a GPG key pair](/guides/control/create-gpg-key).
+  </Step>
+  <Step title="Approvers vote">
+    Everyone on the backup's ACL is asked to approve. Each verifies their identity as they vote — and, where your organisation has hardware security keys enabled, taps a registered security key too — and a simple majority is required. You can follow who has voted on the recovery's progress page.
+  </Step>
+  <Step title="The material is released">
+    For an **online (hot)** key, the encrypted package is prepared automatically once the recovery is approved. For an **offline (cold)** key,  CoinCover's team retrieves the offline material first — Control tells you this is happening and notifies you when the download is ready.
+  </Step>
+  <Step title="Collect and decrypt">
+    Download the encrypted package from Control and decrypt it with your GPG private key. See [Create a GPG key pair](/guides/control/create-gpg-key#decrypt-the-recovery-package) for the decryption steps on macOS, Windows and the command line.
+  </Step>
+</Steps>
+
+<Note>
+  The download is available for a limited time after it becomes ready, and each download link is short-lived — so collect the material promptly once you're notified.
+</Note>
+
+## Who can do what
+
+Anyone in your organisation can start a recovery. Only members of the backup's ACL can approve it — see [Approve or reject a recovery request](/guides/control/approve-recovery-request) for the approver's side.
+
+## What's next
+
+<CardGroup cols={2}>
+  <Card title="Approve a recovery request" icon="circle-check" href="/guides/control/approve-recovery-request">
+    The approver's side of a recovery.
+  </Card>
+
+  <Card title="Set up your Access Control List" icon="user-shield" href="/guides/control/approval-control-list">
+    The approvers a recovery depends on.
+  </Card>
+
+  <Card title="Vault sync" icon="arrows-rotate" href="/guides/vault-sync">
+    Have your derivation paths ready in the recovery package.
+  </Card>
+
+  <Card title="Recover for Institutions" icon="building-columns" href="/institutional-recovery/overview">
+    How institutional recovery is integrated and gated.
+  </Card>
+</CardGroup>

@@ -1,0 +1,96 @@
+---
+title: "Overview"
+description: "Backup and recovery for institutional digital asset wallets, integrated with your wallet platform — for providers backing up their customers' wallets."
+---
+
+Recover for Wallet Providers is built for wallet providers, custodians, and exchanges who want to offer recovery to **their own customers**. We hold encrypted recovery material on your behalf, integrated with the wallet platform you already use, and we get your customers back access to their assets when they need it.
+
+You stay in control of your day-to-day wallet UX. We sit behind the scenes — invisible until recovery is needed.
+
+<Note>
+  Backing up your **own** wallets rather than your customers'? You want [Recover for Businesses](/business-recovery/overview), which integrates CoinCover directly over the standard endpoints.
+</Note>
+
+## How we integrate
+
+We integrate with each major institutional wallet platform in the way that fits its security model. Some partners use our Partner Key Service API directly; others run an offline key ceremony with our Custody Operations team. Either way, the outcome is the same — encrypted recovery material held by CoinCover, available to your customers when they need it.
+
+| Partner | Wallet model | Backup mechanism |
+| --- | --- | --- |
+| [Fireblocks](/partner-guides/fireblocks) | MPC-CMP, 3-of-3 | RSA encryption via Partner API |
+| [BitGo](/partner-guides/bitgo) | Multi-sig, 2-of-3 | Key ceremony |
+| [Cobo](/partner-guides/cobo) | MPC, 2-of-3 | Key ceremony |
+| [Utila](/partner-guides/utila) | MPC, 2-of-2 | RSA encryption via Partner API |
+| [Fordefi](/partner-guides/fordefi) | MPC, 2-of-2 | Manual handover (no API) |
+| [Copper](/partner-guides/copper) | MPC, 2-of-3 (Copper Unlimited) | Key ceremony |
+
+If your wallet platform isn't on the list, talk to us — we add new integrations regularly and the Partner Key Service is designed to be portable.
+
+## What we always do
+
+Whichever partner you use, the integration shape is the same:
+
+<CardGroup cols={2}>
+  <Card title="Hold encrypted recovery material" icon="vault">
+    Every key pair is generated inside an AWS Nitro Enclave. The corresponding private key is then held in our online environment for HOT keys, or in our offline, geo-redundant vault for COLD keys. We can't read your recovery material in plaintext, and neither can our staff.
+  </Card>
+
+  <Card title="Verify identity at recovery time" icon="user-check">
+    Every recovery is gated by identity verification through CoinCover Control. The right person gets their assets back, and no-one else.
+  </Card>
+
+  <Card title="Work with your wallet platform's tooling" icon="plug">
+    We don't replace your wallet UX. We sit alongside it, using each partner's native backup and recovery mechanisms.
+  </Card>
+
+  <Card title="Hold the audit trail" icon="scroll">
+    Every assignment, every storage operation, every recovery — recorded and retained for the life of the relationship.
+  </Card>
+</CardGroup>
+
+## Two integration models
+
+How you integrate depends on your wallet platform.
+
+### Partner Key Service API
+
+Used by Fireblocks, Utila, and Fordefi. CoinCover provides RSA public keys via a REST API. You — or your wallet platform — encrypt recovery material with the public key.
+
+If this is your model, the [API integration guide](/wallet-provider-recovery/api-integration-guide) is your starting point.
+
+### Key ceremony
+
+Used by Cobo, Copper Unlimited and BitGo. CoinCover's Custody Operations team coordinates a key ceremony with your wallet platform and the end customer. The resulting key share is stored on a FIPS 140-2 Level 3 device in a secure vault.
+
+If this is your model, the partner-specific page is the one to read — there's no API integration to do on your side. Onboarding runs through your account manager.
+
+## What every customer gets
+
+Whichever model you're on, every customer ends up with the same protections:
+
+- Encrypted recovery material, with private keys generated inside AWS Nitro Enclaves and stored online (HOT) or in our offline, geo-redundant vault (COLD)
+- CoinCover Control for identity-verified recovery requests
+- A 24/7 on-call line for live recovery incidents
+- Audit logs covering assignment, storage, and recovery for the life of the relationship
+
+## Who it's for
+
+You'll typically integrate Recover for Wallet Providers if you fit one of these descriptions:
+
+- A **wallet provider** (Fireblocks, BitGo, Cobo, Copper, Utila, Fordefi, or similar) offering recovery as a value-add to your customers
+- A **custodian** holding institutional digital assets and offering a recovery story to the customers whose assets you hold
+- An **exchange or fintech** providing wallet infrastructure to customers and needing a fallback path if a key is lost or compromised
+
+If you're backing up your own wallets rather than your customers', see [Recover for Businesses](/business-recovery/overview). If you're building a consumer wallet for end customers, you probably want [Recover for Retail](/retail-recovery/overview).
+
+## What's next
+
+<CardGroup cols={2}>
+  <Card title="API integration guide" href="/wallet-provider-recovery/api-integration-guide">
+    For partners using the Partner Key Service.
+  </Card>
+
+  <Card title="API reference" href="/wallet-provider-recovery/api-reference">
+    Every Partner Key Service endpoint, request, and response.
+  </Card>
+</CardGroup>

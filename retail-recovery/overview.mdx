@@ -1,0 +1,98 @@
+---
+title: "Overview"
+description: "Identity-verified backup and recovery for end users of consumer wallets."
+---
+
+Recover for Retail is built for consumer wallet apps. It gives your customers a way back into their wallet if they lose their device or their seed phrase — without you ever holding their plaintext keys.
+
+You ship the wallet experience your customers already know. We add a recovery path that's identity-verified, end-to-end encrypted, and designed for the real moments when customers need it most.
+
+## What it does
+
+<CardGroup cols={2}>
+  <Card title="Holds part of the recovery picture" icon="lock">
+    Your customer encrypts the recovery material your architecture defines — typically a recovery-key shard — on-device, then sends only the ciphertext to us.
+  </Card>
+
+  <Card title="Verifies identity at recovery" icon="id-card">
+    When a customer needs to recover, they go through identity verification first. We only release the backup once the check is approved.
+  </Card>
+
+  <Card title="Encrypts in transit and at rest" icon="shield-halved">
+    Backups are RSA-OAEP encrypted on the customer's device. Recovered material comes back GPG-encrypted to a key you control.
+  </Card>
+
+  <Card title="Notifies you in real time" icon="bell">
+    Webhook events keep your backend in sync with verification state. No polling, no missed transitions.
+  </Card>
+</CardGroup>
+
+Every key we generate is signed inside the enclave. You can optionally bind business context — the customer or user a key was issued for — into that signature, so verifying it proves the key belongs to that exact context rather than only proving it came from CoinCover. See [binding business context into the signature](/retail-recovery/integration-guide#optionally-bind-business-context-into-the-signature).
+
+## Who it's for
+
+You'll typically integrate Recover for Retail if you're building:
+
+- A **consumer wallet app** (mobile or web) where customers manage their own keys
+- A **non-custodial product** that needs a credible recovery story to compete with custodial alternatives
+- A **fintech onboarding** flow that wants to add wallet protection as a value-add
+
+If you're a wallet provider integrating recovery for institutional customers, see [Recover for Institutions](/institutional-recovery/overview) instead.
+
+## How the integration looks
+
+The integration sits across your backend and your wallet UI. Your customer sees an identity check at the right moments — the rest stays out of their way.
+
+<Steps>
+  <Step title="A backup is created of the customer's wallet">
+    The wallet seed phrase/private key is encrypted with a recovery key, which is then split into two shards. Shard 1 and a hash of Shard 2 are encrypted with a CoinCover public key and stored with CoinCover. Shard 2, a hash of Shard 1, and the encrypted seed phrase are stored with the wallet provider.
+  </Step>
+  <Step title="Biometric verification is complete" stepNumber={2}>
+    The customer will complete a  biometric verification check that is link to their backup package stored with CoinCover.
+  </Step>
+  <Step title="Recovery triggered" stepNumber={3}>
+    When the customer needs to recover — typically months later, on a new device — they kick off a biometric verification check where we will validate that this is the same person who initially backed up.
+  </Step>
+  <Step title="We release our part" stepNumber={4}>
+    Once the verification is approved, we return the decrypted backup package, re-encrypted with a GPG key.
+  </Step>
+  <Step title="Wallet provider releases their part" stepNumber={5}>
+    Once the CoinCover shard has been recieved on the customer's device the wallet provider will request the customer to verify the recovery is legitimate which will then trigger the release of shard 2, hash of shard 1 and the encrypted seedphrase/private key to the customer's app.
+  </Step>
+  <Step title="They restore" stepNumber={6}>
+    Your customer's app will recombine the encryption key and then decrypt the encrypted seedphrase/private key. The customer is back in.
+  </Step>
+</Steps>
+
+We never see plaintext keys, plaintext seed phrases, or any other sensitive material from your customers.
+
+### What we hold depends on your architecture
+
+CoinCover provides a vault primitive — we hold an encrypted blob you send us, and release it back to your customer on a successful identity verification. What that blob represents is your choice, and it depends on how your wallet infrastructure is designed.
+
+For wallet providers integrating Recover for Retail, the dominant pattern for EOA wallets is **split-key recovery**:
+
+- The recovery key that encrypts the customer's seed phrase is split between you and us.
+- We hold one shard, encrypted with our public key and decryptable only inside our enclave. You hold the other shard alongside the encrypted seed phrase in your own infrastructure.
+- At recovery, the customer's device combines both shards to reconstruct the recovery key, then decrypts the seed phrase locally. Plaintext exists only on the customer's device.
+- Neither side alone can reconstruct the seed phrase. Compromise of our infrastructure doesn't compromise customer funds.
+
+## What's next
+
+<CardGroup cols={2}>
+  <Card title="Read the integration guide" href="/retail-recovery/integration-guide">
+    The full backup and recovery flow, end to end.
+  </Card>
+
+  <Card title="API reference" href="/retail-recovery/api-reference">
+    Every endpoint, request, and response.
+  </Card>
+
+  <Card title="UI components" href="/retail-recovery/ui-components">
+    Embedding the Identity SDK in your wallet UI.
+  </Card>
+
+  <Card title="Testing & sandbox" href="/retail-recovery/testing">
+    Simulating verification outcomes without real customers.
+  </Card>
+</CardGroup>

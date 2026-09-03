@@ -1,0 +1,170 @@
+---
+title: "Changelog"
+description: "New features, fixes, and improvements to CoinCover."
+---
+
+<Update label="July 2026 · v1.18.7">
+  **New features**
+
+  - **Passwordless sign-in with magic links** — You can now sign in without a password using a secure single-use link sent to your email, with multi-factor authentication still applied.
+  - **Okta single sign-on** — Organisations can now sign up and sign in to Control using their own Okta identity provider, with the option to require Okta-only sign-in or allow either Okta or a password.
+
+  **Improvements**
+
+  - Refined the magic-link sign-in experience, including a dedicated sign-in methods view and smoother account resolution.
+  - Improved Okta single sign-on setup and reliability, including clearer per-organisation sign-in options and more informative provisioning.
+  - Assigning an approval control list now includes a confirmation step, so changes aren't lost by navigating away before saving.
+  - Improved approval control list management, including more reliable undo of pending changes.
+  - Multi-factor authentication entries are now automatically labelled with your role and email, making authenticator apps easier to manage.
+  - "New Backup Received" notification emails now include the organisation name, making it easier to identify which account a backup belongs to.
+  - Improved the reliability of identity verification, including cases where a verification record has been redacted.
+
+  **Bug fixes**
+
+  - Fixed the account reset and re-registration flow, where the "Check your email" step did not include a field to enter the verification code.
+</Update>
+
+<Update label="July 2026 · v1.17.0">
+  **Improvements**
+
+  - Refined the wording on the sign-in screen for a clearer experience.
+  - Improved API key creation, with partner selection scoped to onboarded partners.
+  - Behind-the-scenes infrastructure improvements to support upcoming capabilities and keep the platform secure and reliable.
+
+  **Bug fixes**
+
+  - Fixed an issue where a vault sync could display a failure message even though the synchronisation had completed successfully.
+</Update>
+
+<Update label="July 2026 · v1.16.6">
+  **New features**
+
+  - **Automatic account cleanup** — When a person is removed from their last organisation, their account is now cleaned up automatically and any outstanding invitations are cancelled. Their email address is released so they can be invited and sign up cleanly again in future, keeping your member list accurate.
+
+  **Improvements**
+
+  - Refreshed the sign-in experience with a cleaner, more consistent layout.
+  - You can now download the QR code when setting up multi-factor authentication.
+  - Behind-the-scenes reliability and infrastructure improvements to keep the platform stable as it scales.
+</Update>
+
+<Update label="July 2026 · v1.15.4">
+  **Improvements**
+
+  - Improved the reliability and precision of vault synchronisation.
+</Update>
+
+<Update label="July 2026 · v1.15.3">
+  **New features**
+
+  - **Tenant groups** — Users can now be organized into tenant groups, with each user belonging to a single group. This gives you clearer access boundaries across your account.
+  - **More reliable identity verification** — Resuming an interrupted identity check now works smoothly, and sessions that have gone stale or expired are handled gracefully so you can always start fresh without getting stuck.
+
+  **Improvements**
+
+  - Access control and recovery approvals now include an additional authentication step for sensitive actions.
+  - Simplified device registration — adding a second device now only requires hardware authentication.
+  - Improved the accuracy of key environment (hot/cold) status reporting.
+  - Improved handling of duplicate partner and organization names to prevent errors during setup and updates.
+  - Refreshed email templates for user invitations and identity verification reminders, with more reliable handling of embedded images and assets.
+  - Improved deal creation and updates with more dependable backup handling.
+
+  **Bug fixes**
+
+  - Fixed an issue where cancelling and reopening the identity verification window could interrupt completing verification.
+
+  **Security & reliability**
+
+  - Routine security and dependency updates.
+</Update>
+
+<Update label="June 2026 · v1.14.2">
+  **Bug fixes**
+
+  - Fixed an issue where the identity verification window would not open after selecting Get started, so verification can now be completed without interruption.
+</Update>
+
+<Update label="June 2026 · v1.14.1">
+  **New features**
+
+  - **Organisation security policy management** — Organisation administrators can now configure and enforce security policies for their members, giving teams greater control over authentication requirements and access standards across their organisation.
+
+  **Bug fixes**
+
+  - Fixed an issue where pending access control change requests were not appearing on the Access Control list page.
+</Update>
+
+<Update label="June 2026 · v1.12.0">
+  **New features**
+
+  - **Hardware Authentication for Organisations** — Organisations can now enforce hardware security key requirements for their members. Administrators can configure the minimum and maximum number of required hardware devices per policy, and members are guided through a step-by-step onboarding flow to register their keys. Step-up verification using a registered hardware key is now required when approving sensitive access control changes.
+  - **Enhanced Identity Verification Traceability** — Identity verification records now include additional user and organisation context, making it easier to investigate and audit verification outcomes within your organisation.
+
+  **Improvements**
+
+  - Automated daily reminder emails are now sent to users who have not yet completed identity verification, reducing the need for manual follow-up.
+  - Pending organisation invitations are now automatically re-sent on a regular schedule until the recipient completes signup.
+  - Administrators can now reset a user's account credentials directly from the admin panel.
+  - Administrators can now update their email address through account settings.
+  - Vault Sync CSV exports have been updated to match the format required by the Fireblocks Recovery Utility, preventing import errors during recovery.
+  - Identity verification webhook handling has been made more resilient — unexpected or unrecognised events are now gracefully acknowledged rather than producing errors.
+  - Partner reminder email configuration has been simplified, improving reliability across different partner setups.
+
+  **Security & reliability**
+
+  - Routine dependency and security updates.
+</Update>
+
+<Update label="June 2026 · v1.11.2">
+  **New features**
+
+  - **User management for administrators** — Administrators can now manage the user directory and control who belongs to each organisation directly from the platform. Every change is captured in an audit trail.
+  - **Step-up authentication and hardware-backed authorization** — Sensitive actions can now require step-up verification, with support for hardware-based authentication for an additional layer of protection.
+  - **Expanded asset support** — A new asset registry broadens the range of supported assets across the platform.
+
+  **Bug fixes**
+
+  - Resolved inconsistencies in naming across access controls for a clearer, more predictable experience.
+
+  **Improvements**
+
+  - Backup details can now be edited after creation, including additional fields.
+  - Recovery notifications are now also sent to Coincover administrators when a recovery is triggered, improving visibility during critical events.
+  - Improved rate limiting accuracy for traffic served through our content delivery network.
+
+  **Security & reliability**
+
+  - Routine dependency and security updates.
+</Update>
+
+<Update label="June 2026 · v1.10.3">
+  **Improvements**
+
+  - Restored the ability to edit an organisation's environment settings. This option had become unavailable and is now working again.
+</Update>
+
+<Update label="June 2026 · v1.10.2">
+  **New features**
+
+  - **Private Key Download as PEM Format** — Recovery packages now include your RSA private key as a PEM file, making it directly compatible with standard cryptographic tools, hardware wallets, and key management systems.
+  - **Secure Storage Public Key Download** — You can now download the public key associated with your secure storage directly from the portal.
+
+  **Bug fixes**
+
+  - Fixed an issue where accessing the member list for a backup would incorrectly redirect you to the sign-in page.
+  - Fixed an issue where backup details only displayed one storage location when multiple storage files were associated with the backup.
+  - Fixed an issue where historical recovery request details could not be retrieved in certain scenarios.
+  - Resolved an issue where identity verification could become unresponsive under certain network conditions.
+
+  **Improvements**
+
+  - Improved the reliability of the cold key recovery process, including more robust upload handling for recovery data packages.
+  - Backup detail views now reflect each user's access permissions.
+  - Improved application performance through database query optimisations, resulting in faster load times for user-related operations.
+  - Improved handling of large file uploads within the recovery workflow.
+  - Improved partner data access controls for clearer organisation-level scoping.
+
+  **Security & reliability**
+
+  - Routine dependency and security updates.
+</Update>

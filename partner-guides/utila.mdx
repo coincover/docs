@@ -1,0 +1,85 @@
+---
+title: "Utila"
+sidebarTitle: "Utila"
+description: "Backup and recovery for the Utila MPC wallet — a single API-based backup flow and key-return recovery."
+icon: "wallet"
+---
+
+Utila uses **MPC in a 2-of-2 setup**. The integration is **API-based**: Utila pulls CoinCover's RSA public key straight from the CoinCover API, so there's no manual key handover. Both MPC shares end up encrypted under that one CoinCover public key, and CoinCover holds only the corresponding RSA private key — never the shares themselves.
+
+Because CoinCover holds a decryption key rather than a signing share, recovery is a **key return**: CoinCover returns the RSA private key under verified conditions, and the customer decrypts their own backup locally to regain access.
+
+## At a glance
+
+| Attribute | Detail |
+| --- | --- |
+| Wallet model | MPC, 2-of-2 |
+| Integration | API-based — Utila pulls CoinCover's RSA public key from the CoinCover API |
+| What CoinCover holds | The RSA private key, stored in an environment of customer choosing |
+| Recovery | Key return — CoinCover returns the RSA private key; the customer decrypts locally |
+
+## Backup
+
+A single flow, driven through the API. The customer approves on their device, and the backup only becomes active once they've been notified it's complete.
+
+<Steps>
+  <Step title="Utila pulls the CoinCover public key">
+    Utila retrieves CoinCover's RSA public key from the CoinCover API. Nothing needs to be handed over manually.
+  </Step>
+  <Step title="The customer confirms the backup">
+    The customer confirms they want to back up with this public key.
+  </Step>
+  <Step title="Both shares are encrypted">
+    Utila encrypts the Utila share with the public key. The customer's device receives a notification to approve, and on approval the customer's key share is encrypted with the same CoinCover public key.
+  </Step>
+  <Step title="The customer downloads the backup package from the console">
+    Once approved, the encrypted backup package (the key material) is available in the Utila console. The customer downloads it — from the record's three-dot menu — and stores it securely, along with the Utila recovery tooling. This is a **one-time** download, and the backup is only active once it's done. A common pitfall is approving the backup but walking away before completing this step.
+  </Step>
+</Steps>
+
+<Note>
+  When Utila pulls CoinCover's RSA public key, verify the `signature` returned with it against your CoinCover verification key before encrypting anything — and, if you want the signature to also bind the customer or workspace, request it with `sign_with`. See [binding business context into the signature](/wallet-provider-recovery/api-integration-guide#optionally-bind-business-context-into-the-signature) in the API integration guide.
+</Note>
+
+<Note>
+  Utila keeps the **wallet data separate** from the backup package. The backup package holds only the encrypted key material, so it's a one-time download; the wallet data is exported separately from the Utila console and should be refreshed **periodically**, since it changes as wallets and addresses are added.
+</Note>
+
+## Recovery
+
+Recovery is a key return. CoinCover releases the RSA private key under verified conditions, and the customer runs the Utila offline tool themselves.
+
+<Steps>
+  <Step title="Request recovery through CoinCover Control">
+    Initiate a recovery request in CoinCover Control. Release is gated by identity verification and your approval policy. As part of the request you supply a **public GPG key**, which CoinCover uses to encrypt the recovery package in transit.
+  </Step>
+  <Step title="CoinCover returns the RSA private key">
+    CoinCover retrieves the RSA private key and returns it to the customer securely, encrypted to the GPG public key they supplied. The customer decrypts it with their **GPG private key** to obtain the unsharded RSA `.pem` key.
+  </Step>
+  <Step title="Run the Utila offline recovery tool">
+    In the Utila offline tool, the customer uploads their CoinCover backup file, their wallet data file, and the decrypted RSA private key, then selects **Recover**. The tool produces a CSV of the recovered wallet keys.
+  </Step>
+  <Step title="Import the recovered keys">
+    The customer imports the recovered private keys into any compatible wallet (for example MetaMask for ETH or Electrum for BTC) to regain access to their assets.
+  </Step>
+</Steps>
+
+## What's next
+
+<CardGroup cols={2}>
+  <Card title="Fordefi" icon="shield-halved" href="/partner-guides/fordefi">
+    The console-based self-custody MPC integration.
+  </Card>
+
+  <Card title="Fireblocks" icon="layer-group" href="/partner-guides/fireblocks">
+    The workspace and device-share MPC integration.
+  </Card>
+
+  <Card title="BitGo" icon="wallet" href="/partner-guides/bitgo">
+    Backup and recovery across the BitGo self-custody wallet.
+  </Card>
+
+  <Card title="Partners overview" icon="handshake" href="/partner-guides/overview">
+    All CoinCover partner integrations.
+  </Card>
+</CardGroup>

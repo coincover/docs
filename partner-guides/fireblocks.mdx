@@ -1,0 +1,152 @@
+---
+title: "Fireblocks"
+sidebarTitle: "Fireblocks"
+description: "Backup and recovery across the Fireblocks MPC workspace — the workspace backup and the owner's device key share backup."
+icon: "layer-group"
+---
+
+Fireblocks uses **MPC-CMP in a 3-of-3 setup**: two of the three key shares live with Fireblocks, and the third lives on the wallet owner's device (in its secure enclave). Every vault and address in a workspace is derived from a single workspace master key (a BIP32 HD wallet), so **one backup covers the entire workspace**.
+
+CoinCover sits alongside Fireblocks as the backup and recovery layer. The integration is **API-based** — CoinCover provides an RSA public key through the Partner API, which is used to encrypt the material that needs protecting. There are **two independent backup flows**, because there are two distinct risks: Fireblocks itself becoming unavailable, and the owner losing their device.
+
+## At a glance
+
+| Backup flow | Protects against | What CoinCover holds |
+| --- | --- | --- |
+| Workspace backup | Fireblocks becoming unavailable | The encrypted backup package (`.zip`) and the RSA private key |
+| Owner's key share backup | The owner losing their device | The encrypted auto-passphrase and the RSA private key |
+
+In both flows CoinCover holds only encrypted material and the RSA private key — never a share it can use on its own. The RSA private key is held encrypted at rest and only ever handled in plaintext within our hardware-isolated key vault.
+
+## Backup
+
+The integration is API-based: CoinCover generates an RSA-4096 key pair through the Partner API, hands the public key to Fireblocks, and holds the private key. The two flows below both reuse that same key pair.
+
+### Workspace backup
+
+Protects against Fireblocks becoming unavailable. This is a one-time setup at onboarding that covers the whole workspace.
+
+<Steps>
+  <Step title="CoinCover provides an RSA public key">
+    CoinCover generates an RSA key pair via the Partner API. The public key is sent to Fireblocks; the private key is held by CoinCover, encrypted at rest.
+  </Step>
+  <Step title="Fireblocks encrypts its two cloud key shares">
+    Fireblocks encrypts its two key shares with CoinCover's RSA public key.
+  </Step>
+  <Step title="The customer encrypts their device share">
+    The workspace owner sets a **recovery passphrase** — known only to them — which encrypts their device key share.
+  </Step>
+  <Step title="Everything is bundled and stored">
+    All three encrypted shares are bundled into a single `.zip` and sent to CoinCover for secure storage.
+  </Step>
+</Steps>
+
+<Note>
+  CoinCover holds the backup `.zip` and the RSA private key, but the device share inside the `.zip` is encrypted with the customer's recovery passphrase, which CoinCover never sees. Without that passphrase the third share can't be decrypted, so CoinCover alone can't reconstruct the wallet.
+</Note>
+
+### Owner's key share (device) backup
+
+Protects against the owner losing or breaking their device. It's a separate, per-owner flow, triggered when the CoinCover service activates on that owner's device — but it reuses the workspace RSA public key.
+
+<Steps>
+  <Step title="The owner enrols">
+    The owner receives an enrolment prompt on their device and confirms it with face verification.
+  </Step>
+  <Step title="The app generates an auto-passphrase">
+    The Fireblocks app generates an **auto-passphrase** — random, internal, and never shown to the user. It's distinct from the workspace recovery passphrase.
+  </Step>
+  <Step title="The auto-passphrase is used twice">
+    The auto-passphrase encrypts the device key share (held by **Fireblocks**), and a copy of the auto-passphrase is itself encrypted with the workspace RSA public key and sent to **CoinCover**.
+  </Step>
+</Steps>
+
+<Note>
+  Separation of concerns: Fireblocks holds the encrypted device share, CoinCover holds the encrypted auto-passphrase that unlocks it, plus the RSA private key needed to decrypt that passphrase. Neither party can recover the share alone.
+</Note>
+
+### Vault sync
+
+The two flows above protect the **keys**. Vault sync protects the **derivation paths** — the record of every vault and address in the workspace and how each is derived, which is what's needed to rebuild the accounts at recovery. It's a one-time link-up, recommended at onboarding, that keeps CoinCover's copy of those derivation paths continuously up to date.
+
+<Steps>
+  <Step title="Link the workspace to CoinCover Control">
+    The customer sets up an API user in CoinCover Control and links their Fireblocks workspace to it. Ideally this is done during onboarding.
+  </Step>
+  <Step title="CoinCover pulls the account data every 24 hours">
+    Using that API access, CoinCover pulls the account's wallet data on a 24-hour cycle, maintaining a current, complete set of the derivation paths for every vault and address in the workspace.
+  </Step>
+  <Step title="The synced record is ready for recovery">
+    Because Control already holds an up-to-date set of derivation paths, a workspace recovery can return them as a CSV alongside the key material, with no manual export needed.
+  </Step>
+</Steps>
+
+<Note>
+  Vault sync is optional but strongly recommended. Without it, a workspace recovery still returns the keys, but the customer has to export their own vault report from Fireblocks at recovery time or rebuild every account manually. With it in place, the current derivation paths are always ready — so we encourage customers to complete this linkage during onboarding.
+</Note>
+
+## Recovery
+
+There are two recovery flows, matching the two backup flows. Both are initiated in **CoinCover Control** and gated the same way: release only happens after identity verification and your approval policy are satisfied, with risk flags routed to manual review. When you raise the request you also supply a **public GPG key** — CoinCover uses it to encrypt the recovery package so it's protected in transit, and you decrypt it locally with the matching private key.
+
+### Workspace recovery — when Fireblocks is unavailable
+
+<Steps>
+  <Step title="Request recovery through CoinCover Control">
+    Submit a recovery request from the CoinCover Control dashboard.
+  </Step>
+  <Step title="Approval gate">
+    Release is gated by identity verification and your approval policy before any material is released.
+  </Step>
+  <Step title="CoinCover releases the held material">
+    CoinCover returns the backup `.zip` and the RSA private key. If the workspace is synced, the release also includes the **vault sync package** — the current derivation paths for every vault — so the customer has everything needed to rebuild all their accounts. The release is encrypted to the GPG public key you supplied, so you first decrypt it with your **GPG private key** before using the material.
+  </Step>
+  <Step title="Reconstitute with the Fireblocks Recovery Utility">
+    On an air-gapped machine, the customer supplies their recovery passphrase and uses the Fireblocks Recovery Utility to decrypt the shares, reconstitute the workspace key, and move assets to a new wallet provider. The derivation data needed to rebuild every vault comes back as a CSV alongside the key material — from the synced record in Control if vault sync is set up, or from the customer's own exported vault report if it isn't.
+  </Step>
+</Steps>
+
+<Note>
+  The **recovery passphrase** set at onboarding is always the customer's to hold — CoinCover never sees it, so it must be stored safely ahead of time.
+</Note>
+
+<Card title="End result" icon="circle-check">
+  Assets across every vault and address in the workspace are recovered in a single operation, because all derivations come from the one master key inside the `.zip`.
+</Card>
+
+### Owner device recovery — when the owner lost their device
+
+<Steps>
+  <Step title="Put the account into recovery mode">
+    The Fireblocks account is placed into recovery mode on the Fireblocks side.
+  </Step>
+  <Step title="Request recovery through CoinCover Control">
+    The owner requests recovery via CoinCover Control. The same approval gate applies before anything is released.
+  </Step>
+  <Step title="CoinCover decrypts and releases the auto-passphrase">
+    CoinCover decrypts the stored auto-passphrase with the RSA private key and returns it to the customer, encrypted to the GPG public key they supplied. The customer decrypts it with their **GPG private key** to obtain the plaintext auto-passphrase.
+  </Step>
+  <Step title="Restore to a fresh device">
+    On a new device, the owner enters the auto-passphrase. The Fireblocks app pulls the encrypted share from Fireblocks servers, decrypts it, and restores it to the new device's secure enclave.
+  </Step>
+</Steps>
+
+## What's next
+
+<CardGroup cols={2}>
+  <Card title="Utila" icon="wallet" href="/partner-guides/utila">
+    The API-based single-backup MPC integration.
+  </Card>
+
+  <Card title="Fordefi" icon="wallet" href="/partner-guides/fordefi">
+    The console-based self-custody MPC integration.
+  </Card>
+
+  <Card title="BitGo" icon="wallet" href="/partner-guides/bitgo">
+    Backup and recovery across the BitGo self-custody wallet.
+  </Card>
+
+  <Card title="Partners overview" icon="handshake" href="/partner-guides/overview">
+    All CoinCover partner integrations.
+  </Card>
+</CardGroup>

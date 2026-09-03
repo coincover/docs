@@ -1,0 +1,340 @@
+---
+title: "API integration guide"
+description: "End-to-end integration of the Partner Key Service for wallet providers."
+---
+
+This guide is for **wallet providers** who integrate via CoinCover's Partner Key Service — the API surface for assigning keys to your customers and storing encrypted recovery material on their behalf. It covers the full happy path: assigning a key, encrypting client-side, storing data and files, and getting ready to ship.
+
+If your integration runs through a key ceremony rather than the API (Cobo, Copper Unlimited, BitGo), the partner-specific page is the one to read. The Partner Key Service powers the API-based partners — Fireblocks, Utila, Fordefi.
+
+<Note>
+  Backing up your **own** wallets rather than your customers'? <br /><br />You want [Recovery for Institutions](/institutional-recovery/overview), which uses the standard endpoints. This guide is for providers holding recovery material on behalf of many downstream customers.
+</Note>
+
+## The shape of an integration
+
+Every Partner Key Service integration follows the same three moves:
+
+<Steps>
+  <Step title="Assign a key">
+    You call us with an identifier for your customer. We generate an RSA key pair in our enclaves and return the public key, hex-encoded.
+  </Step>
+  <Step title="Encrypt client-side">
+    Your customer's recovery material is encrypted with the public key — RSA-OAEP with SHA-256 — before it ever leaves their environment. We never see plaintext.
+  </Step>
+  <Step title="Store the ciphertext">
+    Send the ciphertext to the secure data or secure file endpoint. We hold it. When recovery is needed, the corresponding private key is retrieved from the enclave to decrypt it.
+  </Step>
+</Steps>
+
+The plaintext key share, seed, or backup file never crosses the boundary. That's the whole point.
+
+## Step 1 — Authenticate
+
+Authenticate with a Bearer token in the `Authorization` header. CoinCover supports both JWT tokens and long-lived API keys. Your sandbox credentials are in your welcome pack. Partner endpoints require a token with partner-endpoint scope.
+
+```bash
+export COINCOVER_API_KEY="<your-jwt-or-api-key>"
+export COINCOVER_BASE_URL="https://service.uat-keys.coincover.com"
+```
+
+The full authentication model — scopes, rotation, revocation — is on the [authentication page](/api/authentication).
+
+## Step 2 — Choose HOT or COLD at assignment time
+
+Every key sits in one of two environments. The choice is fixed for the life of the key, so pick deliberately.
+
+| Environment | When to use it |
+| --- | --- |
+| `HOT` | Online generation and storage. Best for high-frequency operations, and applications that need low-latency key access. |
+| `COLD` | Offline generation and storage with enhanced isolation. Best for high value wallets, high-value transactions, and the strictest security requirements. |
+
+On the partner endpoint, `key_environment` is required — there's no default.
+
+## Step 3 — Assign a key to a customer
+
+Call `POST /v1/partner/keys` with an identifier for your customer and your tenant structure. `organisation` and `package` are required so the key is filed against the right downstream customer. We return a stable `key_id` and the public key you'll use to encrypt their data.
+
+<CodeGroup>
+
+```bash curl
+curl -X POST "$COINCOVER_BASE_URL/v1/partner/keys" \
+  -H "Authorization: Bearer $COINCOVER_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "user_identifier": "alice@acme.io",
+    "key_type": "rsa4096",
+    "key_environment": "COLD",
+    "organisation": {
+      "customer_id": "org-123",
+      "customer_name": "Acme Corp"
+    },
+    "package": {
+      "package_id": "pkg-456",
+      "package_name": "Main Workspace"
+    }
+  }'
+```
+
+```typescript Node
+const res = await fetch(`${baseUrl}/v1/partner/keys`, {
+  method: "POST",
+  headers: {
+    Authorization: `Bearer ${apiKey}`,
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({
+    user_identifier: "alice@acme.io",
+    key_type: "rsa4096",
+    key_environment: "COLD",
+    organisation: { customer_id: "org-123", customer_name: "Acme Corp" },
+    package: { package_id: "pkg-456", package_name: "Main Workspace" },
+  }),
+});
+const { key_id, public_key } = await res.json();
+```
+
+```python Python
+import requests
+
+res = requests.post(
+    f"{base_url}/v1/partner/keys",
+    headers={
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json",
+    },
+    json={
+        "user_identifier": "alice@acme.io",
+        "key_type": "rsa4096",
+        "key_environment": "COLD",
+        "organisation": {"customer_id": "org-123", "customer_name": "Acme Corp"},
+        "package": {"package_id": "pkg-456", "package_name": "Main Workspace"},
+    },
+)
+key = res.json()
+key_id, public_key = key["key_id"], key["public_key"]
+```
+
+</CodeGroup>
+
+Store the `key_id` against your customer record. You'll reference it in your own audit logs and customer-support tooling.
+
+The response also includes a `signature` over the `public_key`, signed by the enclave that generated the key. During integration, CoinCover issues you a verification key — use it to verify the signature on every assign-key response. A successful verification confirms the public key really came from a legitimate CoinCover enclave; if it fails, treat the response as untrusted and escalate before encrypting any recovery material.
+
+### Optionally, bind business context into the signature
+
+By default the signature covers only the `public_key`. If you want it to also attest to _which_ customer, package, or user a key was issued for, pass a `sign_with` array on the assign-key request. The enclave signs a canonical JSON payload built from the fields you name plus the `public_key` (which is always included), so a verified signature proves the key is bound to that exact context — which closes off key-substitution across your customers or packages.
+
+Supported fields: `external_customer_id`, `external_package_id`, `pulled_by_id`, `pulled_by_type`, `user_id`, `key_id`, `key_fingerprint`. Don't list `public_key` — it's always included implicitly, and passing it is rejected. Every field you do list must resolve to a value, or the request returns a `400`.
+
+What each field resolves to:
+
+- `external_customer_id` / `external_package_id` — your `organisation.customer_id` / `package.package_id` from the request.
+- `user_id` — CoinCover's internal user id for the `user_identifier` you sent (not the identifier string).
+- `key_id` — the id of the key being assigned (the same `key_id` returned in the response).
+- `key_fingerprint` — the SHA-256 (hex) of the enclave-issued public-key bytes.
+- `pulled_by_id` / `pulled_by_type` — the credential CoinCover authenticated the call with (`api_key` or `user_credentials`). CoinCover sets these from your auth token; they aren't read from the request body.
+
+<CodeGroup>
+
+```bash curl
+curl -X POST "$COINCOVER_BASE_URL/v1/partner/keys" \
+  -H "Authorization: Bearer $COINCOVER_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "user_identifier": "alice@acme.io",
+    "key_type": "rsa4096",
+    "key_environment": "COLD",
+    "organisation": { "customer_id": "org-123", "customer_name": "Acme Corp" },
+    "package": { "package_id": "pkg-456", "package_name": "Main Workspace" },
+    "sign_with": ["external_customer_id", "external_package_id", "user_id"]
+  }'
+```
+
+```typescript Node
+const res = await fetch(`${baseUrl}/v1/partner/keys`, {
+  method: "POST",
+  headers: {
+    Authorization: `Bearer ${apiKey}`,
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({
+    user_identifier: "alice@acme.io",
+    key_type: "rsa4096",
+    key_environment: "COLD",
+    organisation: { customer_id: "org-123", customer_name: "Acme Corp" },
+    package: { package_id: "pkg-456", package_name: "Main Workspace" },
+    sign_with: ["external_customer_id", "external_package_id", "user_id"],
+  }),
+}).then((r) => r.json());
+```
+
+</CodeGroup>
+
+When `sign_with` is present, the response carries two extra fields alongside `signature`:
+
+```json
+{
+  "key_id": "b1f7c0de-2a4c-4f1e-9c3a-8d2e6b5a1f04",
+  "public_key": "04a1b2c3d4e5f6789...",
+  "signature": "MEUCIQD...base64...",
+  "signed_payload": "{\"external_customer_id\":\"org-123\",\"external_package_id\":\"pkg-456\",\"public_key\":\"04a1b2c3d4e5f6789...\",\"user_id\":\"5e9b1c74-3a80-4d2e-b1f6-0c7a9e2d4415\"}",
+  "signed_fields": ["external_customer_id", "external_package_id", "user_id"]
+}
+```
+
+`signed_payload` is the exact [JCS-canonical](https://www.rfc-editor.org/rfc/rfc8785) JSON string the enclave signed: object keys are sorted and the `public_key` is always included alongside the fields you requested. `signed_fields` echoes the fields you requested, in request order (it doesn't include `public_key`).
+
+To verify the binding, check the signature over the exact `signed_payload` bytes with your verification key, then confirm the bound values are the ones you expect:
+
+```typescript Node
+import crypto from "node:crypto";
+
+// CoinCover provides the verification key (PEM) and its signature scheme during integration.
+function verifyBoundKey(res, verificationKeyPem) {
+  const ok = crypto.verify(
+    "sha256", // ECDSA P-256 / SHA-256 by default — confirm the scheme with CoinCover
+    Buffer.from(res.signed_payload, "utf8"), // the exact signed bytes — do not re-serialise
+    verificationKeyPem,
+    Buffer.from(res.signature, "base64"),
+  );
+  if (!ok) throw new Error("signature invalid — treat the response as untrusted");
+
+  const bound = JSON.parse(res.signed_payload);
+  if (bound.external_customer_id !== "org-123") {
+    throw new Error("key is not bound to the expected customer");
+  }
+  return bound;
+}
+```
+
+<Note>
+  `sign_with` is optional and additive. Omit it and the response is unchanged — the signature covers the `public_key` alone, verified over the UTF-8 bytes of the hex `public_key` string (not its decoded bytes) — so existing integrations need no changes.
+</Note>
+
+The full request and response schema is in the [API reference](/wallet-provider-recovery/api-reference).
+
+## Step 4 — Encrypt client-side
+
+The public key comes back hex-encoded. Convert it to PEM, then encrypt with RSA-OAEP using SHA-256 as both the hash and MGF1 hash.
+
+<Note>
+  The checksum must be SHA-256 of the **plaintext**, not the ciphertext.
+</Note>
+
+<CodeGroup>
+
+```typescript Node
+import crypto from "node:crypto";
+
+function hexToPem(publicKeyHex: string): string {
+  const der = Buffer.from(publicKeyHex, "hex");
+  const b64 = der.toString("base64").match(/.{1,64}/g)!.join("\n");
+  return `-----BEGIN PUBLIC KEY-----\n${b64}\n-----END PUBLIC KEY-----\n`;
+}
+
+function encryptForPartner(publicKeyHex: string, plaintext: Buffer) {
+  const pem = hexToPem(publicKeyHex);
+  const ciphertext = crypto.publicEncrypt(
+    {
+      key: pem,
+      padding: crypto.constants.RSA_PKCS1_OAEP_PADDING,
+      oaepHash: "sha256",
+    },
+    plaintext,
+  );
+  const checksum = crypto.createHash("sha256").update(plaintext).digest("hex");
+  return { data: ciphertext.toString("base64"), checksum };
+}
+```
+
+```python Python
+import base64
+import hashlib
+from cryptography.hazmat.primitives import hashes, serialization
+from cryptography.hazmat.primitives.asymmetric import padding
+
+def hex_to_pem(public_key_hex: str) -> bytes:
+    der = bytes.fromhex(public_key_hex)
+    b64 = base64.encodebytes(der).decode().strip()
+    return f"-----BEGIN PUBLIC KEY-----\n{b64}\n-----END PUBLIC KEY-----\n".encode()
+
+def encrypt_for_partner(public_key_hex: str, plaintext: bytes) -> dict:
+    pem = hex_to_pem(public_key_hex)
+    public_key = serialization.load_pem_public_key(pem)
+    ciphertext = public_key.encrypt(
+        plaintext,
+        padding.OAEP(
+            mgf=padding.MGF1(algorithm=hashes.SHA256()),
+            algorithm=hashes.SHA256(),
+            label=None,
+        ),
+    )
+    checksum = hashlib.sha256(plaintext).hexdigest()
+    return {
+        "data": base64.b64encode(ciphertext).decode(),
+        "checksum": checksum,
+    }
+```
+
+</CodeGroup>
+
+RSA-OAEP has a maximum message size (around 446 bytes for a 4096-bit key with SHA-256). For anything larger, encrypt the payload with a fresh symmetric key and wrap that symmetric key with the public key — or use the file endpoint, which expects an already-encrypted binary blob.
+
+## Step 5 — Store encrypted data
+
+Send the ciphertext, the plaintext checksum, and the public key to `POST /v1/partner/secure/data`. We use the public key to identify the storage location — there's no need to repeat the environment. On the partner endpoint the checksum is required.
+
+```bash
+curl -X POST "$COINCOVER_BASE_URL/v1/partner/secure/data" \
+  -H "Authorization: Bearer $COINCOVER_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "public_key": "04a1b2c3d4e5f6789...",
+    "checksum": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "data": "eyJrZXkiOiJ2YWx1ZSJ9",
+    "padding_type": "OAEP",
+    "metadata": {
+      "description": "Encrypted key shares",
+      "content_type": "application/json",
+      "original_filename": "key_shares.json"
+    }
+  }'
+```
+
+## Step 6 — Upload encrypted files
+
+For binary backups — wallet seed files, encrypted archives — use `POST /v1/partner/secure/file`. This is `multipart/form-data` and expects the file to already be encrypted on your side. CoinCover applies no additional encryption server-side.
+
+```bash
+curl -X POST "$COINCOVER_BASE_URL/v1/partner/secure/file" \
+  -H "Authorization: Bearer $COINCOVER_API_KEY" \
+  -F "public_key=04a1b2c3d4e5f6789..." \
+  -F "file=@encrypted_backup.bin" \
+  -F 'metadata={"description":"Wallet seed backup","original_filename":"encrypted_backup.bin"}'
+```
+
+The maximum payload size is 10MB. If you need more, talk to your account manager about chunked upload patterns.
+
+## Step 7 — Test before you ship
+
+Run through the [going to production checklist](/operations/going-to-production) before you cut any production traffic to live keys. The most common issues we see at this stage are:
+
+- Hex-to-PEM conversion off by one byte (always verify with a known-good public key first)
+- OAEP hash and MGF1 hash mismatched (both should be SHA-256)
+- Checksum computed over ciphertext rather than plaintext
+- Sandbox base URL still set in production config
+
+The [testing page](/wallet-provider-recovery/testing) has the full sandbox matrix we recommend.
+
+## What's next
+
+<CardGroup cols={2}>
+  <Card title="API reference" href="/wallet-provider-recovery/api-reference">
+    Every endpoint, request, and response.
+  </Card>
+
+  <Card title="Testing & sandbox" href="/wallet-provider-recovery/testing">
+    The sandbox matrix to run before production.
+  </Card>
+</CardGroup>

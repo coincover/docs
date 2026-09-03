@@ -1,0 +1,119 @@
+---
+title: "CLI reference"
+---
+
+Lookup tables for the CoinCover CLI. For the install-and-use walkthrough, see the [CoinCover CLI guide](/institutional-recovery/cli-integration-guide).
+
+## Environments and API hosts
+
+During first-time setup (or via **Switch environment / API key**) you choose one of four environments. The CLI stores one API key per environment.
+
+| Environment | API host |
+| --- | --- |
+| `uat` | `https://service.uat-keys.coincover.com` |
+| `prod` | `https://service.keys.coincover.com` |
+
+Environments that already have a saved API key are marked **(key saved)** in the list.
+
+## Main menu
+
+| Menu item | What it does |
+| --- | --- |
+| **Back up key material** | Encrypt a key file locally and upload ciphertext to CoinCover. |
+| **Recover key material** | Decrypt a released recovery package on this machine (no API calls). |
+| **Switch environment / API key** | Point the CLI at another environment or enter a new API key. |
+| **Set / update saved User ID & Customer name** | Edit global identity defaults for backups. |
+| **? Help** | Short descriptions of each menu action. |
+| **Exit** | Close the CLI. |
+
+## Protection modes and size limits
+
+| Mode | File size | Summary |
+| --- | --- | --- |
+| **RSA \+ passphrase (recommended)** | up to **401 bytes** | Two layers; uploads via secure data; enclave checksum verified. |
+| **RSA only** | up to **445 bytes** | One layer; no passphrase. |
+| **Envelope encryption \+ passphrase** | **above 470 bytes**, up to **10 MB** | Passphrase plus DEK envelope; uploads a **ZIP** via secure file. |
+
+The key file must be non-empty. Envelope mode requires files **larger than 470 bytes**.
+
+### Passphrase rules (custom passphrases)
+
+When you choose **Create my own passphrase**, it must be 16–128 characters, use at least three character classes, contain at least 10 distinct characters, and avoid common passwords or obvious patterns. The CLI validates each entry. By default the CLI generates a strong passphrase instead. Either way, you must save the passphrase outside the CLI — CoinCover cannot recover it.
+
+## Supported platforms and release assets
+
+macOS (Intel or Apple Silicon), Linux (x86\_64 or ARM64), or Windows x64. Replace `v0.x.x` with the release tag.
+
+| Asset | Platform |
+| --- | --- |
+| `cc-cli-macos-arm64-v0.x.x` or `cc-cli-macos-arm64-v0.x.x.tar.gz` | macOS Apple Silicon |
+| `cc-cli-macos-x64-v0.x.x` or `cc-cli-macos-x64-v0.x.x.tar.gz` | macOS Intel |
+| `cc-cli-linux-x64-v0.x.x` or `.tar.gz` | Linux x86\_64 |
+| `cc-cli-linux-arm64-v0.x.x` or `.tar.gz` | Linux ARM64 |
+| `cc-cli-win-x64-v0.x.x.exe` or `.zip` | Windows x64 |
+
+Tarballs contain an executable named `coincover` at the archive root. Bare binaries (no extension) use the `cc-cli-*` filename — rename to `coincover` when adding to your `PATH`. Each release may include `checksums.txt` (and Cosign signature files on internal releases) for verification.
+
+## Local configuration file
+
+Settings are stored at `~/.coincover/config.json`.
+
+| Stored | Not stored |
+| --- | --- |
+| Active environment | Backup passphrases |
+| API keys (per environment) | Private key files |
+| Saved User ID and Customer name |  |
+| Backup receipts (after each successful backup) |  |
+
+The file is created with mode `0600` (readable only by your user). It is **not encrypted** on disk — use full-disk encryption on the machine and restrict who can access your account. For stronger protection, future versions may move secrets into the OS keychain.
+
+## Backup receipts
+
+After a **successful** backup upload, the CLI saves a JSON receipt at:
+
+```text
+~/.coincover/receipts/{ISO-timestamp}-{backup_id}.json
+```
+
+The timestamp uses ISO-8601 with colons replaced by hyphens for filesystem safety (e.g. `2026-05-27T11-45-12.123Z-a3f7c2d1-….json`). Each receipt records `backup_id`, `key_id`, `backup_name`, `package_id` (your Backup ID), `environment`, and `created_at` — no passphrases or key material. Files are mode `0600`; the receipts directory is `0700`. The **Backup complete** screen includes the receipt path when saving succeeds.
+
+## Debug file logging
+
+To record a detailed trace of CLI actions (menu choices, API calls, encryption steps, file paths), set:
+
+```bash
+export CC_LOGS=true
+```
+
+Then run the CLI as usual. Logs are appended to:
+
+```text
+~/.coincover/logs/key-vault-YYYY-MM-DD.log
+```
+
+Each line is ISO-timestamped. API keys, passphrases, private keys, and ciphertext payloads are **not** written in full — but logs may still contain file paths, user identifiers, and backup metadata. Treat log files as sensitive; enable only while diagnosing an issue, then disable (`unset CC_LOGS`) and delete old logs when finished.
+
+## Troubleshooting
+
+| Problem | What to try |
+| --- | --- |
+| **API error** | Read the message; choose **View full error details?** for request/response bodies (long base64 fields may be truncated). Check API key, environment, and network. |
+| **Checksum mismatch after upload** | Do not rely on the backup until investigated; contact CoinCover support with the error details. |
+| **File too large** | For files above 401 bytes, use **Envelope encryption \+ passphrase** (up to 10 MB). For small files, RSA only allows up to 445 bytes vs 401 for RSA \+ passphrase. |
+| **Wrong private key on recovery** | RSA decryption usually fails immediately; ensure you use the key from the recovery package for this backup. |
+| **Wrong passphrase** | You have three attempts for passphrase-backed backups; passphrase is case-sensitive. |
+| **Unrecognised envelope** | File may be corrupt or not from this CLI; wrong key can rarely produce garbage — verify both files. |
+| **Recovered file "unsupported format" in Archive Utility** | The recovered file is plaintext with a misleading name if the manifest lacked `original_filename`; rename to the correct extension (e.g. `.jpeg`). |
+| **Selected payload.enc instead of ZIP** | Go up one folder and choose `*-backup-package.zip`, not files inside an extracted package. |
+| **Permission denied (Linux/macOS)** | Run `chmod +x` on the binary. |
+| **macOS blocks the app** | See the Gatekeeper steps in the [Key Vault CLI guide](/business-recovery/cli-integration-guide#install-and-run). |
+| **Cancelled backup before review** | No upload occurred; safe to restart. |
+| **Declined review (Proceed? No)** | No API calls; nothing changed on CoinCover. |
+
+## Security checklist
+
+- **Passphrases:** store backup passphrases (CLI-generated or your own) in a team vault or password manager, separate from key files and from the encrypted backup blob.
+- **API keys:** treat like secrets; do not commit `~/.coincover/config.json` to source control.
+- **Environment:** read the **Environment:** line in the CLI before backing up — confirm you are on `prod` (or your intended target), not `dev` or `staging`.
+- **Machine:** prefer a dedicated, patched workstation with disk encryption for backup and recovery operations.
+- **Recovery files:** handle released private keys and ciphertext with the same care as plaintext keys; delete local copies when your policy allows.

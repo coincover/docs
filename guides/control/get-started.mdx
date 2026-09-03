@@ -1,0 +1,75 @@
+---
+title: "Get started with CoinCover Control"
+sidebarTitle: "Get started"
+description: "From your invitation to your first sign-in — creating your account, setting up two-factor authentication, and completing identity verification."
+icon: "circle-play"
+---
+
+CoinCover Control is where your organisation manages its backups, decides who can approve a recovery, and runs recoveries when a key is lost or compromised. It's non-custodial by design: no single person — not an administrator, and not CoinCover — can release your material on their own.
+
+This guide takes a new user from an invitation through to their first sign-in. There are two roles. **Organisation Owners** manage the team and set up who can approve recoveries. **Members** approve recoveries, and vote on changes to the backups they're responsible for.
+
+## Before you start
+
+You need an invitation — you can't self-register. An Organisation Owner (or CoinCover) invites you by email.
+
+## Set up your account
+
+<Steps>
+  <Step title="Accept your invitation">
+    You'll receive an invitation email from CoinCover. Open it and select **Get started** to open the sign-up page. Use the same email address the invitation was sent to.
+  </Step>
+  <Step title="Create your account">
+    Enter your name and choose a password. Passwords need at least 8 characters, and must include an uppercase letter, a lowercase letter, a number, and a special character.
+  </Step>
+  <Step title="Verify your email">
+    CoinCover sends a verification code to your email address. Enter it to confirm your account. If it doesn't arrive, request a new code and check your spam folder.
+  </Step>
+  <Step title="Set up your authenticator app">
+    Every account uses an authenticator app as a second factor. Scan the on-screen QR code with an app such as Google Authenticator, Authy, 1Password or Microsoft Authenticator — or enter the key manually — then enter the code it generates.
+
+    <Warning>
+      Keep your authenticator safe. If you lose access to it, contact CoinCover support to regain access to your account.
+    </Warning>
+  </Step>
+  <Step title="Complete identity verification">
+    On your first sign-in you complete an identity check. It runs in your browser and takes a few minutes. Identity verification protects every sensitive action in Control, so it has to be completed before you can use the platform.
+  </Step>
+</Steps>
+
+<Note>
+  Depending on how your organisation is set up, you may sign in with your own single sign-on instead of a password. If so, follow your provider's prompts — the rest of Control works the same way.
+</Note>
+
+## Finding your way around
+
+Once you're in, you land on the **Backups** page, which lists every backup your organisation holds. The sidebar has four areas:
+
+| Area | What it's for |
+| --- | --- |
+| **Backups** | Every backup package your organisation holds. This is the default landing page. |
+| **Access Control Lists** | Who can approve the recovery of each backup, and any changes to those lists. |
+| **Recoveries** | Every recovery, in progress and past. |
+| **Team** | The people in your organisation. Owners invite and remove users here. |
+
+The bell at the top right shows anything waiting on you — a recovery to approve, or a change to an Access Control List you're on.
+
+## What's next
+
+<CardGroup cols={2}>
+  <Card title="Set up your Access Control List" icon="user-shield" href="/guides/control/approval-control-list">
+    Decide who can approve the recovery of a backup.
+  </Card>
+
+  <Card title="Recover key material" icon="key" href="/guides/control/recover-key-material">
+    Get your backed-up material released when a key is lost.
+  </Card>
+
+  <Card title="Approve a recovery request" icon="circle-check" href="/guides/control/approve-recovery-request">
+    Review and vote on a recovery as an approver.
+  </Card>
+
+  <Card title="Recover for Institutions" icon="building-columns" href="/institutional-recovery/overview">
+    How institutional recovery is integrated and gated.
+  </Card>
+</CardGroup>

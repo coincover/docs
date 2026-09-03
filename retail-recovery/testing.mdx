@@ -1,0 +1,77 @@
+---
+title: "Testing & sandbox"
+description: "Simulating verification outcomes without real customers."
+---
+
+Sandbox lets you walk through every state in the inquiry lifecycle without sending test users through a full identity verification. You drive outcomes with a header, watch the webhooks fire, and confirm your backend handles each state correctly.
+
+## Simulating outcomes
+
+In non-production environments, you can drive an inquiry to a specific state by calling `POST /v1/verification/simulate` with the `verification_id` you got back from `POST /v1/verification/start` and the action you want to simulate. The endpoint fires the corresponding webhook event and updates the inquiry status — exactly as a real event from our external provider would.
+
+**Request**
+
+```json
+{
+  "verification_id": "string (required)",
+  "action": "string (required, see table below)"
+}
+```
+
+### Accepted actions
+
+| Value | Description |
+| --- | --- |
+| `start_inquiry` | Transitions the inquiry to the `started` state. |
+| `complete_inquiry` | Marks the inquiry as completed. |
+| `fail_inquiry` | Simulates a failed inquiry attempt. |
+| `expire_inquiry` | Simulates inquiry expiration. |
+| `mark_for_review_inquiry` | Moves the inquiry to manual review. |
+| `approve_inquiry` | Triggers an `approved` outcome. |
+| `decline_inquiry` | Triggers a `declined` outcome. |
+
+The endpoint is unavailable in production. Don't reference it from production code paths.
+
+## Recommended test plan
+
+We'd recommend partners walk through this matrix before going live.
+
+### Backup happy path
+
+<Steps>
+  <Step title="Start verification, then simulate `approve_inquiry`">
+    Call `POST /v1/verification/start`, then `POST /v1/verification/simulate` with `action: "approve_inquiry"`. Confirm you receive an `inquiry.approved` webhook within a few seconds.
+  </Step>
+  <Step title="Generate a key">
+    Confirm the key and signature are returned, and that the signature verifies against the verification key CoinCover issued you during integration. A failed verification means the response should be treated as untrusted — exercise that path before going live.
+  </Step>
+  <Step title="Encrypt and store a backup">
+    Confirm each entry in the `backup` array of the response includes a `backup_id`, and the returned `checksum` matches your local SHA-256 of the plaintext.
+  </Step>
+</Steps>
+
+### Recovery happy path
+
+<Steps>
+  <Step title="Start a fresh verification, then simulate `approve_inquiry`">
+    A new `verification_id` is required for each recovery.
+  </Step>
+  <Step title="Recover the backup">
+    Confirm the response's `backup` array includes the same `backup_item_key` you stored and a `recovery_package` with `algorithm: "gpg"`.
+  </Step>
+  <Step title="Decrypt locally with your GPG private key">
+    Decrypt the `recovery_package.data` payload and verify its SHA-256 matches the checksum you stored.
+  </Step>
+  <Step title="Re-back-up the rotated material">
+    Use the same approved `verification_id` to call `POST /v1/backup/store` and confirm the new backup writes successfully.
+  </Step>
+</Steps>
+
+### Failure paths
+
+| Scenario | Simulate action | What to confirm |
+| --- | --- | --- |
+| Customer abandons mid-flow | `expire_inquiry` | Your backend handles the timeout gracefully. No partial backup is written. |
+| Document fails | `fail_inquiry` | The customer is given a clear message. The backup is not stored. |
+| IDV declines | `decline_inquiry` | Backup is rejected. Customer is offered a retry, not a hard wall. |
+| Manual review | `mark_for_review_inquiry` | Your UI explains the wait. Customer isn't repeatedly retrying. |

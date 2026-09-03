@@ -1,0 +1,186 @@
+---
+title: "BitGo"
+sidebarTitle: "BitGo"
+description: "Backup and recovery across the BitGo self-custody wallet integration pathways — API-created and UI-created wallets."
+icon: "wallet"
+---
+
+BitGo has been a CoinCover partner for a long time, and we support backup and recovery for the **BitGo self-custody wallet**. How you integrate depends on two things: how the wallet was created, and which backup mechanism suits that wallet.
+
+There are two ways to create a self-custody wallet — through the **BitGo API**, or through the **BitGo web UI (console)** — and each offers two backup approaches.
+
+<Warning>
+  Selecting CoinCover in BitGo — or completing any of the backup flows below — does **not** on its own mean your wallets are protected. Backup only takes effect once you have a commercial agreement with CoinCover covering them. If you don't have one in place yet, [contact us](https://www.coincover.com/contact) before relying on any backup.
+</Warning>
+
+## At a glance
+
+| Wallet created via | Wallet type | Backup approach | What CoinCover holds |
+| --- | --- | --- | --- |
+| API | Multi-sig | Key ceremony — CoinCover is a backup key | The backup private key, held encrypted |
+| API | MPC | Encrypt-and-store an RSA-wrapped backup key | The encrypted backup package |
+| UI / console | Multi-sig | CoinCover selected as backup key provider | The backup private key, held encrypted |
+| UI / console | Multi-sig OR MPC | Self-generated KeyCard, backed up via the CLI | The encrypted KeyCard package |
+
+## Backup
+
+### Wallets created via the BitGo API
+
+When the wallet is created programmatically through the BitGo API, you integrate using the CoinCover API. There are two approaches depending on the wallet type.
+
+#### Multi-sig — CoinCover as a backup key
+
+For multi-sig wallets, CoinCover acts as the **backup key** in your BitGo wallet. You assign a signer key via the CoinCover API (`POST /v1/keys` with `key_type: "secp256k1"`, or `"ed25519"` for chains that use it); CoinCover generates the key pair inside our hardware-isolated key vault and returns the compressed public key. The private key is only ever handled in plaintext inside that vault; at rest it's held encrypted, so neither you nor CoinCover staff can read it.
+
+BitGo — like most multi-sig platforms — expects a BIP32 extended public key (xpub) for each key in the wallet. An xpub is `(compressed public key + 32-byte chain code)` plus BIP32 metadata, and the enclave returns the compressed public key but not a chain code, so there's no native xpub. You supply the chain code, assemble the xpub yourself, and store the chain code back with CoinCover so it's available at recovery. You then register the assembled xpub as the backup key in BitGo's wallet-creation key ceremony.
+
+<Note>
+  The worked example is the `secp256k1` / BIP32 case. `ed25519` keys (used by chains such as Solana) are also supported, but they follow their chain's own hierarchical derivation scheme rather than BIP32 — the chain-code and xpub assembly steps don't apply. The assign, store, and recovery shape is otherwise the same.
+</Note>
+
+<Card title="Add a backup key" icon="key" href="/institutional-recovery/add-a-backup-key">
+  The full worked flow — assigning the signer key, generating the chain code, assembling the xpub, and registering it in the key ceremony — lives on the Add a backup key page.
+</Card>
+
+#### MPC wallets — encrypt and store a backup key
+
+For MPC wallets, CoinCover can't take part in the key ceremony. Instead, the customer generates their own backup key and stores it with CoinCover as encrypted material:
+
+<Steps>
+  <Step title="Generate the backup key">
+    Create the backup key on your side, following BitGo's process for the wallet.
+  </Step>
+  <Step title="Pull an RSA-4096 public key from CoinCover">
+    Assign an `rsa4096` key via the CoinCover API to get an encryption public key.
+  </Step>
+  <Step title="Encrypt the backup key">
+    Encrypt the backup key with the RSA public key (RSA-OAEP, SHA-256), client-side. Your plaintext key never reaches CoinCover.
+  </Step>
+  <Step title="Send the encrypted package to CoinCover">
+    Store the ciphertext with CoinCover, which holds it securely until recovery.
+  </Step>
+</Steps>
+
+<Card title="Back up key material" icon="lock" href="/institutional-recovery/back-up-key-material">
+  The encrypt-and-store API flow — assigning the RSA key, encrypting client-side, and storing the ciphertext — is documented in full on the Back up key material page.
+</Card>
+
+### Wallets created via the BitGo UI (console)
+
+When the wallet is created through the BitGo web console, there are two backup approaches.
+
+#### CoinCover selected as the backup key provider
+
+For a set of supported multi-sig assets, BitGo lets you select **CoinCover as the backup key provider** during wallet creation. Behind the scenes, CoinCover acts as the backup key: it provides the public key used in BitGo's wallet-creation key ceremony and holds the corresponding private key encrypted at rest.
+
+As part of onboarding, there's a four-step activation:
+
+<Steps>
+  <Step title="Select CoinCover at wallet creation">
+    Select CoinCover as the backup key holder when you create the wallet in BitGo. This applies to **every wallet you want protected** — CoinCover only holds a backup key for wallets where it has been designated at the point of creation.
+  </Step>
+  <Step title="Create a dedicated CoinCover viewer user">
+    Create a BitGo user dedicated to CoinCover monitoring rather than using a personal login. Tying CoinCover's access to a service account you control means it outlives any individual, survives people joining or leaving, and never exposes wallets beyond the ones you assign.
+
+    1. Create a new BitGo user specifically for CoinCover monitoring.
+    2. On a BitGo Enterprise account, add the user to the enterprise and complete any approvals needed before it can be added to wallets.
+    3. Add this user as a **Viewer** on every wallet CoinCover protects, completing any approvals those actions require.
+    4. Log in as the dedicated user — the access token in the next step is created under this user.
+
+    <Note>
+      CoinCover only sees wallets this user is a Viewer on, so you stay in control of what's shared. A token created under a personal login instead would inherit that person's wallet access and break if their account were ever changed or removed.
+    </Note>
+  </Step>
+  <Step title="Create the viewer access token">
+    Logged in as the dedicated user, create the access token that gives CoinCover **read-only** access to the protected wallets. CoinCover uses it to reconcile your wallets at backup time and confirm the correct ones are backed up.
+
+    In the BitGo console, open **Account Settings → Developer Options** and add an access token with these settings:
+
+    - **Label** — `Coincover Monitoring Token`
+
+    - **Permissions** — set to **View**
+
+    Add CoinCover's five monitoring IPs to the token's IP address whitelist, comma-separated with no spaces (the commas between addresses are required):
+
+    ```text
+    18.133.68.226,3.11.149.135,3.11.127.247,18.169.123.165,18.169.110.69
+    ```
+
+    Check **I agree** and click **Add Access Token**. BitGo then prompts your 2FA device to authenticate the token creation.
+
+    <Note>
+      BitGo requires an IP whitelist for long-lived production access tokens, so this token only works from CoinCover's monitoring IPs. BitGo's own reference for this flow is [Create Access Tokens](https://developers.bitgo.com/guides/get-started/access-tokens).
+    </Note>
+  </Step>
+  <Step title="Send the token to CoinCover, encrypted">
+    Send the access token to [support@coincover.com](mailto:support@coincover.com), encrypted with the GPG key supplied in your welcome email so it's protected in transit. CoinCover support then validates with you which wallets we hold the backup key for.
+  </Step>
+</Steps>
+
+<Note>
+  This option is available for the multi-sig assets that BitGo supports with CoinCover as a backup key provider.
+</Note>
+
+#### Self-generated KeyCard, backed up via the CoinCover CLI
+
+For assets not natively supported — where CoinCover can't be selected as the backup key provider — you generate the backup key yourself. BitGo issues a **KeyCard PDF** containing the key material, which you then back up with CoinCover:
+
+<Steps>
+  <Step title="Get a CoinCover API key">
+    CoinCover issues you an API key for use with the CLI as part of onboarding.
+  </Step>
+  <Step title="Back up the KeyCard with the CLI">
+    Use the CoinCover Key Vault CLI to back up the KeyCard PDF. Because the PDF is larger than the small-file limit, it uses the **envelope encryption** pathway — the file is encrypted on your machine and only ciphertext is uploaded.
+  </Step>
+  <Step title="CoinCover stores it under governance">
+    CoinCover stores the encrypted package securely, with the access controls and governance managed in CoinCover Control.
+  </Step>
+</Steps>
+
+<Card title="CLI integration guide" icon="terminal" href="/institutional-recovery/cli-integration-guide">
+  Installing the CLI and running the envelope-encryption backup flow is covered on the CLI integration guide.
+</Card>
+
+<Note>
+  However you back up — CoinCover selected as the backup key, the API flows, or self-generated KeyCards via the CLI — and even across a mix of them, all your backups show up together centrally in CoinCover Control, giving you a single view of what's protected.
+</Note>
+
+## Recovery
+
+The recovery process varies slightly based on the type of backup you have completed. The most common pathway is, CoinCover releasing the material it has been holding, and you complete the recovery using BitGo's recovery tooling.
+
+<Steps>
+  <Step title="Request recovery through CoinCover Control">
+    Raise a recovery request in CoinCover Control. Release is gated by identity verification and your approval policy — the material is only released once those conditions are satisfied. As part of the request you supply a **public GPG key**, which CoinCover uses to encrypt the recovery package in transit.
+  </Step>
+  <Step title="CoinCover releases the held material">
+    Depending on the backup pathway, CoinCover returns the backup private key (and, for the multi-sig key-ceremony case, the stored chain code), or the encrypted backup package for you to decrypt locally. The release is encrypted to the GPG public key you supplied, so you first decrypt it with your **GPG private key** before using the material.
+  </Step>
+  <Step title="Sign with BitGo's recovery tooling">
+    Use the released material with BitGo's recovery tooling to sign a transaction that moves the assets to a new wallet you control.
+  </Step>
+</Steps>
+
+<Note>
+  The exact recovery steps differ slightly by pathway — a key-ceremony backup key is reconstructed from the released backup private key plus the stored chain code, while a CLI or encrypt-and-store backup is decrypted locally from the released package.
+</Note>
+
+## What's next
+
+<CardGroup cols={2}>
+  <Card title="Add a backup key" icon="key" href="/institutional-recovery/add-a-backup-key">
+    The multi-sig key-ceremony backup flow.
+  </Card>
+
+  <Card title="Back up key material" icon="lock" href="/institutional-recovery/back-up-key-material">
+    The RSA encrypt-and-store flow for MPC wallets.
+  </Card>
+
+  <Card title="CLI integration guide" icon="terminal" href="/institutional-recovery/cli-integration-guide">
+    The CLI backup flow for self-generated KeyCards.
+  </Card>
+
+  <Card title="Partners overview" icon="handshake" href="/partner-guides/overview">
+    All CoinCover partner integrations.
+  </Card>
+</CardGroup>
