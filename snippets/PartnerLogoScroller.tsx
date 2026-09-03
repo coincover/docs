@@ -33,7 +33,7 @@ export const PartnerLogoScroller = ({
           <img
             src={logo.src}
             alt={logo.name}
-            className="h-24 w-24 rounded-md object-contain"
+            className="cc-partner-logo h-24 w-24 rounded-md object-contain"
           />
         </div>
       ))}
