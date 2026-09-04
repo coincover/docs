@@ -78,3 +78,13 @@ html.dark .cc-hero-bg img {
   position: relative;
   z-index: 1;
 }
+
+.cc-cta {
+  background-color: transparent;
+}
+
+/* Partner SVGs are <img>, so currentColor inside the file cannot see html.dark.
+   Invert luminance in dark mode and rotate hue back so brand colours stay. */
+html.dark .cc-partner-logo {
+  filter: invert(1) hue-rotate(180deg);
+}
