@@ -1,0 +1,133 @@
+---
+title: "Validating key signatures"
+description: "How CoinCover attests key assignment, and how to verify those signatures against our published JWKS."
+icon: "file-signature"
+---
+
+CoinCover cryptographically signs every key we generate. Verifying that signature confirms two things: the public key came from a CoinCover enclave, and, when requested, that it is bound to a specific customer, user, wallet or workspace.
+
+If verification fails, treat the response as untrusted and escalate. Do not encrypt recovery material, assemble a wallet, or persist the key as canonical.
+
+## How it works
+
+The generating enclave signs with CoinCover's private signing key. You verify with the matching public key, which we publish as a JSON Web Key Set (JWKS).
+
+The signature is **ECDSA over P-256 with SHA-256** (`ES256`). It is **base64-encoded DER**, not a compact JWS. Verify it with a standard ECDSA verifier; do not treat it as a JWT.
+
+What the signature covers depends on the request:
+
+| Request | Signed bytes |
+| --- | --- |
+| Default (no `sign_with`) | The UTF-8 bytes of the hex `public_key` string — not the decoded key bytes |
+| With `sign_with` | The exact UTF-8 bytes of `signed_payload`, a [JCS-canonical](https://www.rfc-editor.org/rfc/rfc8785) JSON string |
+
+`signed_payload` always includes `public_key` alongside the fields you named. Object keys are sorted. Do not re-serialise the JSON before verifying — use the string we returned.
+
+## JWKS endpoints
+
+CoinCover publishes a JWKS per environment. Use the document that matches the API you are calling — production signatures will not verify against the UAT keys, and the reverse is also true.
+
+| Environment | Typical API hosts | JWKS |
+| --- | --- | --- |
+| Production | `https://service.keys.coincover.com`<br />`https://orchestrator.control.coincover.com` | [https://policies.keys.coincover.com/.well-known/jwks.json](https://policies.keys.coincover.com/.well-known/jwks.json) |
+| UAT | `https://service.uat-keys.coincover.com`<br />`https://orchestrator.uat-control.coincover.com` | [https://policies.uat-keys.coincover.com/.well-known/jwks.json](https://policies.uat-keys.coincover.com/.well-known/jwks.json) |
+
+<Note>
+  UAT is the non-production environment these guides use for integration. Develop against it when you want to verify signatures and exercise backup flows without initiating production recoveries. It is the environment the rest of this site currently calls sandbox, and the UAT name is due to change to sandbox — until that rename ships, the UAT hosts above are the ones to use.
+</Note>
+
+Fetch the JWKS over HTTPS and do not follow redirects. Cache production and UAT documents separately: they currently share the `kid` `enclave-signing-key-v1` but the key material is different, so a cache keyed only on `kid` will mix environments.
+
+### Response format
+
+The shape is the same in every environment. This example is production; UAT publishes different `x` and `y` values (and can share the same `kid` string).
+
+```json
+{
+  "keys": [
+    {
+      "kty": "EC",
+      "crv": "P-256",
+      "alg": "ES256",
+      "use": "sig",
+      "kid": "enclave-signing-key-v1",
+      "x": "VJXGyVxF7URJ1ekrziZrtap_pkQ-R-lcjot9T_RLKPM",
+      "y": "7kOQGa-87OvVVV6_L4OSvz9O-Rg2a07a7HRtJqPPX0M",
+      "coincover:purposes": ["assignment-sig", "policy-sig"],
+      "coincover:validFrom": "2026-06-23T00:00:00Z"
+    }
+  ]
+}
+```
+
+| Field | Description |
+| --- | --- |
+| `kty` | Key type. Assignment signatures use `EC`. |
+| `crv` | Curve. Assignment signatures use `P-256`. |
+| `alg` | Algorithm. Assignment signatures use `ES256` (ECDSA with SHA-256). |
+| `use` | Key usage. Always `sig` for signature verification. |
+| `kid` | Key ID. Cache and look up keys by environment and this value. |
+| `x` / `y` | EC public key coordinates (Base64URL-encoded). |
+| `coincover:purposes` | What this key is allowed to sign. For key attestation, require `assignment-sig`. |
+| `coincover:validFrom` | Instant from which the key may be used. Ignore keys that are not yet valid. |
+
+Only accept a JWKS entry that is `EC` / `P-256` / `ES256` / `use: sig`, includes `assignment-sig` in `coincover:purposes`, and has a `validFrom` in the past. Other purposes (for example `policy-sig`) are not valid for key-assignment signatures unless they also list `assignment-sig`.
+
+## Verifying a signature
+
+<Steps>
+  <Step title="Load CoinCover's signing keys">
+    Fetch the JWKS for the environment you called, or use a cache indexed by environment and `kid` (see [Caching JWKS](#caching-jwks)). Keep only keys that match the assignment-signing constraints above.
+  </Step>
+  <Step title="Select the verification key">
+    Look the key up by `kid` when you have one. Otherwise, use the eligible assignment-signing keys from the cache. Never verify with the `public_key` in the key-assignment response — that is the recovery key, not CoinCover's attestation key.
+  </Step>
+  <Step title="Decode the signature">
+    Decode `signature` from standard Base64 to raw bytes.
+  </Step>
+  <Step title="Choose the signed bytes">
+    If `signed_payload` is present, verify over those exact UTF-8 bytes. Otherwise verify over the UTF-8 bytes of the hex `public_key` string.
+  </Step>
+  <Step title="Verify ECDSA">
+    Verify ECDSA P-256 / SHA-256 over those bytes with the JWKS public key. Libraries that distinguish encodings should be told the signature is **DER**, not IEEE P1363.
+  </Step>
+  <Step title="Accept or reject">
+    If verification fails, reject the response. Do not retry with a reconstructed payload.
+  </Step>
+</Steps>
+
+A valid signature proves the enclave attested those exact bytes. It does not by itself prove the bound customer is the one you expected — do that next.
+
+## Checking the binding
+
+When you sent `sign_with`, also check that the attested values match the assignment you just made:
+
+- `signed_fields` is exactly the list you requested, in that order.
+- The parsed `signed_payload` includes `public_key` matching the response.
+- Any other bound field you asked for (`key_id`, `user_id`, `external_customer_id`, and so on) matches the assignment you just made.
+- If you bound `key_fingerprint`, it equals the SHA-256 of the public-key **bytes** (hex-decode `public_key`, then hash), not the SHA-256 of the hex string.
+
+A valid signature over unexpected values is still untrusted. Stop and escalate.
+
+How to request the extra fields is covered in each product's integration guide: [wallet providers](/wallet-provider-recovery/api-integration-guide#optionally-bind-business-context-into-the-signature), [institutions](/institutional-recovery/back-up-key-material#optionally-bind-business-context-into-the-signature), and [retail](/retail-recovery/integration-guide#optionally-bind-business-context-into-the-signature).
+
+## Caching JWKS
+
+Each JWKS endpoint returns `Cache-Control: max-age=600, must-revalidate` (ten minutes). Cache the document for that environment and **index the keys by `kid`**. Lookups should hit that map rather than refetching on every key assignment. Keep a separate cache (or a composite key of environment + `kid`) for UAT and production.
+
+During rotation the document can contain more than one key. `kid` is how you pick the right one within that environment. If verification fails because the `kid` is unknown, refresh the JWKS for that environment and retry once as the signing key may have rotated. Do not pin a single key forever.
+
+Respect `max-age`. A cache that never expires will miss rotation; a cache that never stores will add latency and a runtime dependency on the JWKS host for every assignment.
+
+## Common pitfalls
+
+| Issue | What to do |
+| --- | --- |
+| Re-serialising `signed_payload` | Verify over the exact string we returned. Re-stringifying JSON changes key order and whitespace and will fail. |
+| Verifying with the recovery `public_key` | Use the JWKS attestation key, not the key in the assignment response. |
+| Hashing the hex string for `key_fingerprint` | Hex-decode `public_key` first, then SHA-256 the bytes. |
+| IEEE P1363 signature encoding | The signature is DER-encoded ECDSA. Configure your verifier accordingly. |
+| Stale JWKS cache | If the `kid` is unknown, refresh the JWKS for that environment and retry once. |
+| Wrong JWKS for the environment | Verify UAT signatures with the UAT JWKS, production signatures with the production JWKS. The `kid` values can match across environments; the key material does not. |
+| Using a key with the wrong purpose | Require `assignment-sig` in `coincover:purposes`. |
+| Following redirects on the JWKS URL | Fetch the published URL directly over HTTPS. |

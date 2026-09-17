@@ -38,7 +38,7 @@ A single flow, driven through the API. The customer approves on their device, an
 </Steps>
 
 <Note>
-  When Utila pulls CoinCover's RSA public key, verify the `signature` returned with it against your CoinCover verification key before encrypting anything — and, if you want the signature to also bind the customer or workspace, request it with `sign_with`. See [binding business context into the signature](/wallet-provider-recovery/api-integration-guide#optionally-bind-business-context-into-the-signature) in the API integration guide.
+  When Utila pulls CoinCover's RSA public key, verify the `signature` returned with it against CoinCover's published JWKS before encrypting anything — see [Validating key signatures](/guides/validating-key-signatures). If you want the signature to also bind the customer or workspace, request it with `sign_with`. See [binding business context into the signature](/wallet-provider-recovery/api-integration-guide#optionally-bind-business-context-into-the-signature) in the API integration guide.
 </Note>
 
 <Note>

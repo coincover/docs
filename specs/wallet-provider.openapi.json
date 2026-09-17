@@ -361,7 +361,7 @@
           },
           "signature": {
             "type": "string",
-            "description": "Signature of the key in base64 format, produced by the generating enclave. Verify against your CoinCover verification key before encrypting recovery material. When sign_with is supplied the signature is computed over signed_payload; otherwise it covers the public key."
+            "description": "Signature of the key in base64 format, produced by the generating enclave. Verify against CoinCover's published JWKS before encrypting recovery material. When sign_with is supplied the signature is computed over signed_payload; otherwise it covers the public key."
           },
           "signed_payload": {
             "type": "string",

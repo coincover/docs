@@ -38,13 +38,13 @@ curl -X POST "$COINCOVER_BASE_URL/v1/keys" \
   }'
 ```
 
-Verify the returned `signature` against your CoinCover verification key before continuing. If it fails, treat the response as untrusted and escalate before building the wallet.
+Verify the returned `signature` against CoinCover's published JWKS before continuing — see [Validating key signatures](/guides/validating-key-signatures). If it fails, treat the response as untrusted and escalate before building the wallet.
 
 ### Optionally, bind business context into the signature
 
 You can also bind business context into that signature so it attests to _which_ wallet or customer the key is for, not just the key bytes. Pass a `sign_with` array on the request and the enclave signs the fields you name alongside the `public_key`. For a backup signer the useful fields are `key_fingerprint` / `public_key` and `external_customer_id`: `key_fingerprint` is the SHA-256 of the compressed public key the enclave issued, and `public_key` is always in the payload anyway, so together with `external_customer_id` the signature ties that enclave-issued key to the customer it's for. The chain code you add when assembling the xpub is outside this signature — store and track it separately. Every field you list must resolve to a value, or the request returns a `400`.
 
-The request shape, the `signed_payload`/`signed_fields` response, and a verification snippet are all in [Back up key material](/institutional-recovery/back-up-key-material#optionally-bind-business-context-into-the-signature) — the mechanics are identical here.
+The request shape and the `signed_payload`/`signed_fields` response are in [Back up key material](/institutional-recovery/back-up-key-material#optionally-bind-business-context-into-the-signature) — the mechanics are identical here. Verify the signature as described in [Validating key signatures](/guides/validating-key-signatures).
 
 ## Step 3 — Generate a chain code
 

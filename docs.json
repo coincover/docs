@@ -65,6 +65,11 @@
         "tab": "Guides",
         "groups": [
           {
+            "group": "Keys",
+            "icon": "key",
+            "pages": ["guides/validating-key-signatures"]
+          },
+          {
             "group": "Using CoinCover Control",
             "icon": "sliders",
             "pages": [
