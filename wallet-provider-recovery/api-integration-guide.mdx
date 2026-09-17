@@ -119,7 +119,7 @@ key_id, public_key = key["key_id"], key["public_key"]
 
 Store the `key_id` against your customer record. You'll reference it in your own audit logs and customer-support tooling.
 
-The response also includes a `signature` over the `public_key`, signed by the enclave that generated the key. During integration, CoinCover issues you a verification key — use it to verify the signature on every assign-key response. A successful verification confirms the public key really came from a legitimate CoinCover enclave; if it fails, treat the response as untrusted and escalate before encrypting any recovery material.
+The response also includes a `signature` over the `public_key`, signed by the enclave that generated the key. Verify it against CoinCover's published JWKS on every assign-key response — see [Validating key signatures](/guides/validating-key-signatures). A successful verification confirms the public key really came from a legitimate CoinCover enclave; if it fails, treat the response as untrusted and escalate before encrypting any recovery material.
 
 ### Optionally, bind business context into the signature
 
@@ -185,28 +185,7 @@ When `sign_with` is present, the response carries two extra fields alongside `si
 
 `signed_payload` is the exact [JCS-canonical](https://www.rfc-editor.org/rfc/rfc8785) JSON string the enclave signed: object keys are sorted and the `public_key` is always included alongside the fields you requested. `signed_fields` echoes the fields you requested, in request order (it doesn't include `public_key`).
 
-To verify the binding, check the signature over the exact `signed_payload` bytes with your verification key, then confirm the bound values are the ones you expect:
-
-```typescript Node
-import crypto from "node:crypto";
-
-// CoinCover provides the verification key (PEM) and its signature scheme during integration.
-function verifyBoundKey(res, verificationKeyPem) {
-  const ok = crypto.verify(
-    "sha256", // ECDSA P-256 / SHA-256 by default — confirm the scheme with CoinCover
-    Buffer.from(res.signed_payload, "utf8"), // the exact signed bytes — do not re-serialise
-    verificationKeyPem,
-    Buffer.from(res.signature, "base64"),
-  );
-  if (!ok) throw new Error("signature invalid — treat the response as untrusted");
-
-  const bound = JSON.parse(res.signed_payload);
-  if (bound.external_customer_id !== "org-123") {
-    throw new Error("key is not bound to the expected customer");
-  }
-  return bound;
-}
-```
+To verify the binding, check the signature over the exact `signed_payload` bytes against CoinCover's published JWKS, then confirm the bound values are the ones you expect. See [Validating key signatures](/guides/validating-key-signatures) for the verification process, including how to cache keys by `kid`.
 
 <Note>
   `sign_with` is optional and additive. Omit it and the response is unchanged — the signature covers the `public_key` alone, verified over the UTF-8 bytes of the hex `public_key` string (not its decoded bytes) — so existing integrations need no changes.

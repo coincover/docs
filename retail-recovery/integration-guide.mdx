@@ -58,7 +58,7 @@ Call `POST /v1/key/generate` to obtain the public key your customer will use for
 }
 ```
 
-The key pair is generated inside a CoinCover enclave. The response includes a `signature` over the `public_key`, signed by the enclave that generated the key. During integration, CoinCover issues you a verification key — use it to verify the signature on every key-generate response. A successful verification confirms the public key really came from a legitimate CoinCover enclave; if it fails, treat the response as untrusted and escalate before encrypting any backup material.
+The key pair is generated inside a CoinCover enclave. The response includes a `signature` over the `public_key`, signed by the enclave that generated the key. Verify it against CoinCover's published JWKS on every key-generate response — see [Validating key signatures](/guides/validating-key-signatures). A successful verification confirms the public key really came from a legitimate CoinCover enclave; if it fails, treat the response as untrusted and escalate before encrypting any backup material.
 
 Store the `key_id` against your customer record. You'll reference it in your audit logs and customer-support tooling.
 
@@ -104,10 +104,10 @@ When `sign_with` is present, the response carries two extra fields alongside `si
 
 `signed_payload` is the exact [JCS-canonical](https://www.rfc-editor.org/rfc/rfc8785) JSON string the enclave signed: object keys are sorted, and `public_key` is always included alongside the fields you requested. `signed_fields` echoes the fields you requested, in request order — it doesn't include `public_key`.
 
-Verify the signature over the exact `signed_payload` bytes — don't re-serialise the JSON — then confirm the bound values match the customer you're provisioning. A failed signature, or a bound value you didn't expect, means the response is untrusted: stop and escalate.
+Verify the signature over the exact `signed_payload` bytes — don't re-serialise the JSON — then confirm the bound values match the customer you're provisioning. A failed signature, or a bound value you didn't expect, means the response is untrusted: stop and escalate. The full verification process, including how to load CoinCover's JWKS, is in [Validating key signatures](/guides/validating-key-signatures).
 
 <Warning>
-  A contextual signature is verified with the same verification key CoinCover issued you during integration — **not** with the `public_key` in the response. The signature is base64-encoded ECDSA P-256 in DER format.
+  A contextual signature is verified with CoinCover's published JWKS attestation key — **not** with the `public_key` in the response. The signature is base64-encoded ECDSA P-256 in DER format.
 </Warning>
 
 Requests are rejected with a `400` if you list `public_key`, name a field outside the supported list, or repeat a field — each field may only appear once.

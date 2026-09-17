@@ -43,7 +43,7 @@ We'd recommend partners walk through this matrix before going live.
     Call `POST /v1/verification/start`, then `POST /v1/verification/simulate` with `action: "approve_inquiry"`. Confirm you receive an `inquiry.approved` webhook within a few seconds.
   </Step>
   <Step title="Generate a key">
-    Confirm the key and signature are returned, and that the signature verifies against the verification key CoinCover issued you during integration. A failed verification means the response should be treated as untrusted — exercise that path before going live.
+    Confirm the key and signature are returned, and that the signature verifies against CoinCover's published JWKS — see [Validating key signatures](/guides/validating-key-signatures). A failed verification means the response should be treated as untrusted — exercise that path before going live.
   </Step>
   <Step title="Encrypt and store a backup">
     Confirm each entry in the `backup` array of the response includes a `backup_id`, and the returned `checksum` matches your local SHA-256 of the plaintext.

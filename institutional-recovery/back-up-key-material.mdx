@@ -79,7 +79,7 @@ key_id, public_key = key["key_id"], key["public_key"]
 
 </CodeGroup>
 
-Store the `key_id` against your wallet record. The response also carries a `signature` over the `public_key`, signed by the generating enclave — verify it with your CoinCover verification key before relying on the key. If verification fails, treat the response as untrusted and escalate.
+Store the `key_id` against your wallet record. The response also carries a `signature` over the `public_key`, signed by the generating enclave — verify it against CoinCover's published JWKS before relying on the key. See [Validating key signatures](/guides/validating-key-signatures). If verification fails, treat the response as untrusted and escalate.
 
 ### Optionally, bind business context into the signature
 
@@ -112,7 +112,7 @@ When `sign_with` is present, the response carries two extra fields alongside `si
 }
 ```
 
-`signed_payload` is the exact [JCS-canonical](https://www.rfc-editor.org/rfc/rfc8785) JSON string the enclave signed: object keys are sorted and the `public_key` is always included alongside your requested fields. `signed_fields` echoes the fields you requested, in request order. <br /><br />Verify `signature` against your CoinCover verification key over those exact bytes — don't re-serialise the JSON — then confirm the bound values match the wallet you're provisioning. A failed signature or an unexpected value means the response is untrusted: stop and escalate.
+`signed_payload` is the exact [JCS-canonical](https://www.rfc-editor.org/rfc/rfc8785) JSON string the enclave signed: object keys are sorted and the `public_key` is always included alongside your requested fields. `signed_fields` echoes the fields you requested, in request order. <br /><br />Verify `signature` against CoinCover's published JWKS over those exact bytes — don't re-serialise the JSON — then confirm the bound values match the wallet you're provisioning. See [Validating key signatures](/guides/validating-key-signatures). A failed signature or an unexpected value means the response is untrusted: stop and escalate.
 
 <Note>
   `sign_with` is optional and additive. Omit it and the response is unchanged — the legacy signature covers the `public_key` alone, verified over the UTF-8 bytes of the hex `public_key` string (not its decoded bytes) — so existing integrations keep working.
