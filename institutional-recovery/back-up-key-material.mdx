@@ -85,7 +85,7 @@ Store the `key_id` against your wallet record. The response also carries a `sign
 
 By default the signature covers only the `public_key`. Pass a `sign_with` array on the request to have the enclave also bind chosen context fields — alongside the `public_key`, which is always included — so a verified signature attests to _which_ wallet, customer, or package the key was issued for, not just the key bytes.
 
-Supported fields: `external_customer_id`, `external_package_id`, `pulled_by_id`, `pulled_by_type`, `user_id`, `key_id`, `key_fingerprint`. To bind `external_customer_id` or `external_package_id`, include the matching `organisation`/`package` on the request. Don't list `public_key` — it's always included implicitly, and passing it is rejected. Any field you list that can't be resolved returns a `400`. `key_fingerprint` is the SHA-256 (hex) of the public-key bytes; `pulled_by_id`/`pulled_by_type` are the caller identity CoinCover sets from your auth token, not request fields.
+Supported fields: `external_customer_id`, `external_package_id`, `pulled_by_id`, `pulled_by_type`, `user_id`, `key_id`, `key_fingerprint`. To bind `external_customer_id` or `external_package_id`, include the matching `organisation`/`package` on the request. Don't list `public_key` — it's always included implicitly, and passing it is rejected. Any field you list that can't be resolved returns a `400`. `key_fingerprint` is the SHA-256 of the public-key bytes, as lowercase hex; `pulled_by_id`/`pulled_by_type` are the caller identity CoinCover sets from your auth token, not request fields.
 
 ```bash
 curl -X POST "$COINCOVER_BASE_URL/v1/keys" \

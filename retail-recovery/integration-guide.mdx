@@ -73,7 +73,7 @@ What each field resolves to on a retail request:
 - `external_customer_id` / `external_package_id` — resolved server-side from your partner credentials and the `user_identifier`. Retail requests don't carry an `organisation` or `package` block, so you don't send these.
 - `user_id` — CoinCover's internal user id for that `user_identifier`, not the identifier string itself.
 - `key_id` — the id of the key being generated (the same `key_id` returned in the response).
-- `key_fingerprint` — the SHA-256 (hex) of the enclave-issued public-key bytes.
+- `key_fingerprint` — the SHA-256 of the enclave-issued public-key bytes, as lowercase hex.
 - `pulled_by_id` / `pulled_by_type` — the credential CoinCover authenticated the call with (`api_key` or `user_credentials`). We set these from your auth token; they aren't read from the request body.
 
 `verification_id` is not bindable. It scopes the call but isn't part of the signed payload, so track which verification session a key belongs to in your own records, against `key_id`.
