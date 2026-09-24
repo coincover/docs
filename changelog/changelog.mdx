@@ -4,6 +4,50 @@ description: "New features, fixes, and improvements to CoinCover."
 mode: "wide"
 ---
 
+<Update label="Sept 2026 · v1.23.10">
+  **New features**
+
+  - **Recovery Readiness certificates** — Once a readiness programme is complete, owners can issue and download a signed certificate as a durable record of your readiness position, ready to share with auditors and stakeholders.
+  - **Policy review in the browser** — Recovery policies can now be read and reviewed without leaving Control. The policy document opens in a built-in viewer, and reviewers can leave comments against it and reply in threaded discussions. Owners are notified when a policy is waiting on them, and draft comments stay private to the reviewer until published.
+  - **Support-assisted multi-factor reset** — If you lose access to your authenticator app or security key, support can now take you through a verified reset to restore access to your account.
+  - **Signer set administration** — Administrators can create and manage signer sets used for partner verification, including adding and removing signers and reviewing the current membership of each set.
+  - **Environment indicator** — A persistent badge shows which organisation and environment you are working in, making it immediately clear whether you are acting against test or live data.
+  - **Move backups between partner organisations** — Backups can now be transferred between partner organisations, and customers operating several workspaces under a single recovery arrangement are now handled correctly.
+  - **Streamlined invitation links** — New team members joining via an invitation link now land on a dedicated sign-up page and confirm their invite with a one-time code.
+
+  **Improvements**
+
+  - Invitations that have expired or already been used now explain what happened and offer a route to request a new one, instead of failing without context.
+  - Verification codes now use a slotted input, making codes easier to enter and to paste.
+  - Added a dedicated screen for setting a new password when one is required at sign-in.
+  - Recovery Readiness training is now delivered through an in-app course player, so assigned training can be completed without leaving Control.
+  - Reduced first-response delays when signing in.
+  - Notifications now appear at the bottom of the screen, where they are less likely to obscure page content.
+  - Refreshed tables throughout the product with clearer loading states, consistent borders, and tidier row actions.
+  - Empty states across the recovery lists are clearer about when there is genuinely nothing to show.
+  - In-app feedback is now routed directly to the product support team.
+  - Partner badges now appear alongside identity information, and adapt automatically to light or dark mode.
+  - Access control lists now validate quorum and vetoer/mandatory member configurations up front, preventing invalid setups from being saved.
+
+  **Bug fixes**
+
+  - Fixed an issue where syncing could fail on workspaces with a large number of vaults. Synchronisation now completes reliably on these accounts.
+  - Fixed an issue where signing in with an email sign-in link could fail for accounts that use an authenticator app, even when a valid code was entered.
+  - Fixed an issue where identity verification could be treated as incomplete after you had finished it, leaving you unable to progress.
+  - Fixed an issue where backup details would not display when no access control list had been assigned to the backup.
+  - Fixed an issue where members of a backup's access control list could be missing from the details view.
+  - Fixed an issue where searching a table that returned no matches left the search box unusable until the page was reloaded.
+  - Fixed an issue where a cold recovery could fail to start when none of the available packages supported key recovery.
+  - Fixed an issue where an access control list set up with only one or two members could become stuck and unable to progress.
+  - Fixed an issue preventing legacy backups from being soft-deleted.
+
+  **Security**
+
+  - Multi-factor verification is now applied consistently when signing in with an email sign-in link, matching the behaviour of password sign-in. Accounts with an authenticator app or security key enrolled are always prompted to verify before access is granted.
+  - Hardened the multi-factor reset and recovery process.
+  - Recovery policy activity is now forwarded to our central security monitoring pipeline.
+</Update>
+
 <Update label="Sept 2026 · v1.21.0">
   **New features**
 
