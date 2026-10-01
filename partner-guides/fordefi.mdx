@@ -47,7 +47,7 @@ Recovery is a key return. CoinCover releases the RSA private key under verified 
 
 <Steps>
   <Step title="Request recovery through CoinCover Control">
-    Initiate a recovery request in CoinCover Control. Release is gated by identity verification and your approval policy. As part of the request you supply a **public GPG key**, which CoinCover uses to encrypt the recovery package in transit.
+    Initiate a recovery request in CoinCover Control. Release is gated by identity verification and your approval policy. As part of the request you supply a **public GPG key**, which CoinCover uses to encrypt the RSA private key in transit. CoinCover never holds the recovery package — that stays with you.
   </Step>
   <Step title="CoinCover releases the RSA private key">
     CoinCover releases the RSA private key from our hardware-isolated key vault and returns it to the customer securely, encrypted to the GPG public key they supplied. The customer decrypts it with their **GPG private key** to obtain the RSA private key.
