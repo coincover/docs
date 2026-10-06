@@ -5,7 +5,7 @@ description: "Get your backed-up key material released — raise the request, pr
 icon: "key"
 ---
 
-Recovery is how your organisation gets its backed-up key material released when a key is lost or compromised. It runs through named approvers in CoinCover Control — never automatically, and never by one person alone. Anyone in your organisation can start a recovery, but nothing is released until the backup's Access Control List (ACL) has approved it.
+Recovery is how your organisation gets its backed-up key material released when a key is lost or compromised. It runs through the named approvers on the backup's Access Control List — never automatically, and only when the list's approval policy is met. Anyone in your organisation can start a recovery, but nothing is released until the backup's Access Control List (ACL) has approved it.
 
 <Warning>
   Recovery is a high-stakes operation, and every recovery is recorded. Start one only when there's a genuine need.
@@ -13,7 +13,7 @@ Recovery is how your organisation gets its backed-up key material released when 
 
 ## Before you start
 
-- **Your ACL is ready.** The backup needs an established Access Control List of at least three members. See [Set up your Access Control List](/guides/control/approval-control-list).
+- **Your ACL is ready.** The backup needs an Access Control List with at least one member, and no change to that ACL can be waiting for a vote. See [Set up your Access Control List](/guides/control/approval-control-list).
 - **A GPG key pair you control.** You provide the public key when you raise the request, and you need the matching private key to open the recovered material — so have the pair ready before you begin. If you don't have one yet, see [Create a GPG key pair](/guides/control/create-gpg-key).
 - **Know whether the key is held online or offline.** Online (hot) and offline (cold) keys release differently, so it's worth confirming which of your keys is which before you need to recover.
 
@@ -27,7 +27,7 @@ Recovery is how your organisation gets its backed-up key material released when 
     Paste or upload your GPG public key. The recovered material is encrypted to it, so only the holder of the matching private key can open it. Control confirms the key is valid before the request goes ahead. New to GPG? See [Create a GPG key pair](/guides/control/create-gpg-key).
   </Step>
   <Step title="Approvers vote">
-    Everyone on the backup's ACL is asked to approve. Each verifies their identity as they vote — and, where your organisation has hardware security keys enabled, taps a registered security key too — and a simple majority is required. You can follow who has voted on the recovery's progress page.
+    Everyone on the backup's ACL is asked to approve. Each verifies their identity as they vote — and, where your organisation has hardware security keys enabled, taps a registered security key too — and the ACL's approval policy must be met. You can follow who has voted on the recovery's progress page.
   </Step>
   <Step title="The material is released">
     For an **online (hot)** key, the encrypted package is prepared automatically once the recovery is approved. For an **offline (cold)** key,  CoinCover's team retrieves the offline material first — Control tells you this is happening and notifies you when the download is ready.
