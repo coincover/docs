@@ -5,7 +5,7 @@ description: "As a member of an Access Control List, review and vote on a propos
 icon: "user-check"
 ---
 
-When someone proposes adding, removing or replacing a member of a backup's Access Control List (ACL), everyone already on that ACL is asked to vote. A simple majority decides. This guide is for that vote.
+When someone proposes adding, removing or replacing a member of an Access Control List (ACL), everyone already on that ACL is asked to vote. The ACL's approval policy decides the outcome: **Majority**, **Percentage** or **Exact count**, plus any **Veto** or **Must approve** roles. This guide is for that vote.
 
 ## You'll be notified
 
@@ -29,9 +29,19 @@ Both take you to the pending change.
     You complete an identity check as part of voting. It confirms it's really you approving the change, at the moment you approve it. If your organisation has hardware security keys enabled, you'll also tap your registered security key as you vote.
   </Step>
   <Step title="Approve or reject">
-    Your vote counts toward the majority. Once a simple majority approves, the change takes effect; if a majority reject, it's declined.
+    Your vote counts toward the ACL's threshold. Once enough members approve under the policy, the change takes effect. If enough reject, or a Veto member rejects, it's declined.
   </Step>
 </Steps>
+
+## How your vote is counted
+
+- **The threshold applies both ways.** The change is approved when approvals reach the ACL's threshold, and declined when rejections reach it. If everyone has voted and neither side reached it, the change is declined.
+- **If you're a Veto member**, your rejection declines the change on its own. A veto only counts while the vote is still open, so vote promptly.
+- **If you're a Must-approve member**, the change can't pass without your approval, even when the threshold is met. It waits for you.
+- **Your vote counts once your identity check completes.**
+- **The voting window.** The vote stays open for your organisation's voting window, seven days by default. If it isn't decided by then, it expires and nothing changes.
+
+See [How the outcome is decided](/guides/control/approval-control-list#how-the-outcome-is-decided) for the full order and a worked example.
 
 <Warning>
   Your vote is final once you confirm it — it can't be changed afterwards. Review the change carefully before confirming.
