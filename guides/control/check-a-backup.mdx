@@ -1,0 +1,107 @@
+---
+title: "Check a backup with Assurance"
+sidebarTitle: "Check a backup"
+description: "Run a check that a hot backup is intact and its key can be rebuilt, and keep a signed record of every check."
+icon: "shield-check"
+---
+
+Assurance lets you check, from Control, that a hot backup CoinCover holds for you is intact and that its key can be rebuilt. Every check is kept in the backup's history, along with records signed by CoinCover, so you can show when a backup was last checked and what the result was.
+
+## At a glance
+
+| | |
+| --- | --- |
+| **Where** | A backup's page, on the **Assurance** tab. Each item under **Storage information** on the **Overview** tab also shows its latest result. |
+| **Who can run a check** | The organisation Owner, and members of the backup's Access Control List (ACL) for the backups that ACL covers. |
+| **Which backups** | Hot backups only. Cold backups are held offline and aren't checked in Control. |
+| **When checks run** | When someone selects **Run check now**. One check covers every item on the backup that can be checked. |
+| **What you keep** | A history of every check, who started it, and a record of each result signed by CoinCover that you can download. |
+
+## What a check does
+
+Each check runs inside CoinCover's secure enclave. Your key is rebuilt and your backup is decrypted only inside the enclave, and the check returns a result, not the contents.
+
+| Check | What we do | Result when it passes |
+| --- | --- | --- |
+| **Key check** | Rebuild the backup's key from a random set of its stored parts, and confirm it matches the key you were given. | **Key rebuilt** |
+| **File check** | For each stored file or data item, decrypt it inside the enclave and confirm its checksum matches the one recorded when you stored it. | **File unchanged** |
+
+A passed check confirms the backup was intact, and its key could be rebuilt, at the time of the check.
+
+If CoinCover doesn't hold a stored copy of an item, that item shows **Not covered by checks**.
+
+## Run a check
+
+<Steps>
+  <Step title="Open the backup">
+    In Control, go to **Backups** and open the backup.
+  </Step>
+  <Step title="Open the Assurance tab">
+    Select **Assurance**, next to **Overview**. The dot on the tab shows the backup's current state.
+  </Step>
+  <Step title="Run the check">
+    Select **Run check now**. The button reads **Checking…** while the checks run, and a message tells you the result.
+  </Step>
+  <Step title="Review the result">
+    The summary shows the overall result. **What we check** shows the result for the key and for each stored item.
+  </Step>
+</Steps>
+
+On the **Overview** tab, each item under **Storage information** shows its latest result. Select it to open the **Assurance** tab. If nothing has been checked yet, you can also select **Run check now** there.
+
+### When you can't run a check
+
+**Run check now** is unavailable, and Control shows the reason next to it, when:
+
+- the backup is cold: **Cold backups are held offline and can't be checked.**
+- there's nothing on the backup CoinCover can check: **This backup has nothing we can check.**
+- a change to the backup's ACL is waiting for votes: **Checks can't run while an access control change is in progress.**
+- a recovery of the backup is in progress: **Checks can't run while a recovery is active.**
+
+## What the results mean
+
+| Result | What it means | What to do |
+| --- | --- | --- |
+| **All checks passed** | Every item that can be checked passed its latest check. | Nothing. |
+| **Needs attention** | A check finished and found a problem: the key couldn't be rebuilt, or a file doesn't match the one you gave us. | Contact CoinCover support. A failed check doesn't change or remove your backup. |
+| **Didn't finish** | The check stopped because of a problem on CoinCover's side. It tells you nothing about your backup. | Try again in a few minutes. If it keeps happening, contact support. |
+| **Not checked yet** | No check has run on this item. | Select **Run check now**. |
+| **Held offline** | The backup is cold. | Nothing. Cold backups aren't checked in Control. |
+
+If a check runs but can't reach a result, the summary says so. Run the check again to get one.
+
+## History and signed records
+
+**History** lists every check on the backup with its **Date**, **Result** and who it was **Started by**. Checks started together appear as one row.
+
+Select **Details** on a row to see the technical details for that check: the key parts used, the threshold, the raw outcome, the checksum compared with its baseline, and the signing key.
+
+Select **Download signed records** to save the records for that check. If a check didn't produce a signed record, its details say so. Each record is signed by CoinCover's enclave signing key, so you can check it yourself against CoinCover's published signing keys. See [Validating key signatures](/guides/validating-key-signatures).
+
+<Note>
+  Records are signed by CoinCover, so they aren't an independent audit. Control shows the signing key but doesn't check the signature for you.
+</Note>
+
+Each check also appears in the backup's event history.
+
+## If you don't see the Assurance tab
+
+- You need to be the organisation Owner, or a member of the backup's ACL.
+- The backup needs at least one item CoinCover can check.
+- Assurance needs to be turned on for your organisation. Contact your CoinCover account team.
+
+## Checking backups through the API
+
+If you integrate through the API, you can run the same checks with the `verify` endpoints. See [Back up key material](/institutional-recovery/back-up-key-material#step-6-verify-the-key-and-backup).
+
+## What's next
+
+<CardGroup cols={2}>
+  <Card title="Recover key material" icon="key" href="/guides/control/recover-key-material">
+    Get your backed-up key material released when you need it.
+  </Card>
+
+  <Card title="Set up your ACL" icon="user-shield" href="/guides/control/approval-control-list">
+    Decide who can approve a backup's recovery, and who can check it.
+  </Card>
+</CardGroup>
