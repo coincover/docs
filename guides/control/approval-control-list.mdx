@@ -5,20 +5,22 @@ description: "Create an Access Control List, choose the approval policy that dec
 icon: "user-shield"
 ---
 
-An Access Control List (ACL) is the group of named people authorised to approve the recovery of the backups it protects, and to approve any change to who is on the list. You decide how many of them must agree by choosing an **approval policy** when you create the ACL.
+An Access Control List (ACL) is the group of named people authorised to approve the recovery of the backups it protects, and to approve any change to who is on the list. You decide how many of them must agree by choosing an **approval policy** when you create the ACL. The members can vote to change it later.
 
-Changing who's on an ACL isn't an administrative action. The people already on the list vote on it, under the same policy. That's what ensures nobody outside the list, whether one of your own administrators or CoinCover, can quietly change who is able to release your material.
+Changing who's on an ACL, what role each member has, or its approval policy isn't an administrative action. The people already on the list vote on it, under the ACL's current policy. That's what ensures nobody outside the list, whether one of your own administrators or CoinCover, can quietly change who is able to release your material.
 
 ## At a glance
 
 |  |  |
 | --- | --- |
 | **Scope** | One ACL can protect many backups. Each backup is protected by one ACL. |
-| **Approval policy** | **Majority**, **Percentage** or **Exact count**, chosen when you create the ACL |
+| **Approval policy** | **Majority**, **Percentage** or **Exact count**, chosen when you create the ACL. Changing it later needs a vote. |
 | **Member roles** | **Normal**, **Veto** or **Must approve**. A member can be both Veto and Must approve. |
 | **Minimum size** | One member, as long as the policy can always be met by the members you add |
 | **Who creates an ACL** | An Organisation Owner |
-| **Who approves a change or a recovery** | The ACL's members, under its policy |
+| **Who can propose a change** | An Organisation Owner or a member of the ACL, with **Edit ACL** |
+| **Who approves a change or a recovery** | The ACL's members, under its current policy. Members being removed vote too. |
+| **What doesn't need a vote** | Renaming the ACL, and attaching more backups to it. Only an Organisation Owner can do either. |
 | **Voting window** | Set for your organisation. Seven days by default. |
 | **Verification of Vote** | Each member's identity is verified at the point of voting, with an optional hardware security key for added assurance. |
 
@@ -102,7 +104,7 @@ flowchart TD
     G --> H["Assign Backups (optional)"]
     H --> I["Complete: name the ACL, review, then Create ACL"]
     I --> J["The ACL is live and its members are active straight away"]
-    J --> K["Every later change and every recovery goes to a vote under this policy"]
+    J --> K["Every later change to members, roles or policy, and every recovery, goes to a vote"]
 ```
 
 <Steps>
@@ -127,7 +129,7 @@ flowchart TD
     On **Assign Backups**, choose the backups this ACL protects. Recovering any of them will need this policy. Backups that already have an ACL show as **Already assigned** and can't be selected. This step is optional: you can assign backups later.
   </Step>
   <Step title="Name, review and create">
-    On **Complete**, give the ACL a name under **Name this ACL**, review the members and backups, then select **Create ACL**. The members you added are active straight away. No vote is needed to set up the list.
+    On **Complete**, check the name under **Name this ACL**. Control fills in a name that describes the policy, such as "Majority ACL, 5 members". You can change it, but you can't leave it blank. Review the members and backups, then select **Create ACL**. The members you added are active straight away. No vote is needed to set up the list.
   </Step>
 </Steps>
 
