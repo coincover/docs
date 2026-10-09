@@ -71,11 +71,7 @@ Control checks a vote in this order every time someone votes:
 3. **Threshold.** If approvals reach the threshold, the request is approved, subject to step 4. If rejections reach the threshold, it's declined. If everyone has voted and neither side reached it, it's declined.
 4. **Must approve.** If the threshold is met but a Must-approve member hasn't approved yet, the request stays open for them. If a Must-approve member rejected, the request can't pass, and it's declined once everyone has voted or when the window closes.
 
-A vote only counts once that member's identity check has completed.
-
-<Warning>
-  **A veto only works while the vote is still open.** If enough members approve before a Veto member votes, and every Must-approve member has already approved, the request is approved there and then. If a person must always have the final say, make them both **Veto** and **Must approve**.
-</Warning>
+A vote only counts once that member's verification has been completed.
 
 #### Worked example
 
