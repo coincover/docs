@@ -133,31 +133,65 @@ flowchart TD
   </Step>
 </Steps>
 
-## Change who's on an ACL
+## Change an ACL
 
-Once the ACL exists, adding, removing or replacing a member is proposed and then voted on under the ACL's policy.
+Once the ACL exists, you change it with **Edit ACL** on the ACL's page. In one go you can add and remove members, change members' roles, change the approval policy, and attach more backups. Everything except the backups goes to a single vote of the current members, under the ACL's current policy.
+
+```mermaid
+flowchart TD
+    A["Owner or ACL member: open the ACL, then Edit ACL"] --> B["Members & Roles: add or remove members, change roles or the policy"]
+    B --> C{"Could the ACL left after the change still pass a vote?"}
+    C -- "No: Control blocks you" --> B
+    C -- Yes --> D["Review Vote: check the changes and who votes"]
+    D --> E["Owner only: Attach Backups, applied straight away without a vote"]
+    E --> F["Submit for vote"]
+    F --> G["Every current member votes, including anyone being removed"]
+    G --> H{"Passes under the current policy?"}
+    H -- Yes --> I["All the changes apply at once"]
+    H -- "No, or the voting window closes" --> J["Nothing changes"]
+```
 
 <Steps>
-  <Step title="Propose the change">
-    Open the ACL from **Access Control Lists** and propose adding, removing or replacing a member. Members are added one at a time, each with its own vote. When you add someone you can give them the **Veto** or **Must approve **role. 
+  <Step title="Open the wizard">
+    Open the ACL from **Access Control Lists** and select **Edit ACL**. An Organisation Owner or any member of the ACL can do this. If **Edit ACL** isn't available, its tooltip says why, for example because a vote is already open or a recovery is in progress on one of the ACL's backups.
   </Step>
-  <Step title="The members vote">
-    Everyone currently on the ACL is asked to approve or reject, and each completes verification  as they vote. 
+  <Step title="Change members, roles and the policy">
+    On **Members & Roles**, search for someone to add and pick their role, remove members, or change a member's role between **Normal**, **Veto** and **Must approve**. You can also change the policy type or its threshold. Each row shows whether that person is being added, being removed, or having their role changed.
+
+    As in the Create ACL wizard, you can't continue if the ACL left after the change could never pass a vote. For example, you can't set an Exact count of 4 while only 3 members would remain.
+  </Step>
+  <Step title="Review the vote">
+    On **Review Vote**, check **Your changes** and the before and after view of the policy. The page lists who votes and the rule the vote passes under. If someone being removed is a **Veto** or **Must approve** member, Control points out that they can block their own removal.
+  </Step>
+  <Step title="Attach backups (Organisation Owners only)">
+    On **Attach Backups**, choose any more backups this ACL should protect. Backups are attached as soon as you submit, without a vote. A backup that's already protected by another ACL can't be moved to this one, and a backup can't be taken off an ACL once it's attached.
+  </Step>
+  <Step title="Submit">
+    Select **Submit for vote**. Everyone currently on the ACL is asked to approve or reject the change as a whole. If you only attached backups, nothing goes to a vote.
   </Step>
   <Step title="The change takes effect">
-    Once the vote passes under the ACL's policy, the change is applied. If it's declined or the voting window closes first, nothing changes. See [Approve or reject an ACL change](/guides/control/approve-list-change) for the voter's side.
+    If the vote passes under the ACL's current policy, all the changes apply together. If it's declined, or the voting window closes first, nothing changes. A new policy applies to votes after the change, not to the vote that approves it. See [Approve or reject an ACL change](/guides/control/approve-list-change) for the voter's side.
   </Step>
 </Steps>
 
-For example, on a **Majority** ACL of four members (3 approvals needed), removing one member leaves three people who can vote, so all three must approve.
+### Who votes on a change
 
-<Note>
-  Control blocks a removal when the members left to vote on it couldn't reach the threshold. Because the policy can't be edited, add a member first, or keep the member.
-</Note>
+Every current member votes, including anyone the change would remove. People being added don't vote, because they aren't members yet.
+
+- A **Veto** member can veto their own removal.
+- A **Must approve** member has to approve their own removal, or the change can't pass.
+
+The same applies to a change that takes away their Veto or Must approve role.
+
+For example, on a **Majority** ACL of four members (3 approvals needed), a change that removes one member is voted on by all four, and still needs 3 approvals.
+
+### Rename an ACL
+
+Organisation Owners can rename an ACL at any time. On the ACL's page, select its name, enter the new name in **Rename ACL** and save. Renaming doesn't go to a vote, and it doesn't change who can approve anything.
 
 ## Good to know
 
-- **One change at a time.** Finish or cancel a pending change before proposing another.
+- **One change at a time.** A change can include many edits, but only one can be open for voting on an ACL. Wait for it to finish, or cancel it, before making another.
 - **ACLs are frozen during a recovery.** An ACL can't be edited while a recovery is running on one of its backups, and a recovery can't be started while a change to its ACL is in progress. Plan membership changes outside recovery windows.
 - **Remove people from the ACL before the organisation.** Control won't remove a person from your organisation while they're still on any Access Control List, so take them off their ACLs first.
 
