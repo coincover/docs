@@ -152,13 +152,13 @@ flowchart TD
 ```
 
 <Steps>
-  <Step title="Open the wizard">
+  <Step title="Open Edit ACL">
     Open the ACL from **Access Control Lists** and select **Edit ACL**. An Organisation Owner or any member of the ACL can do this. If **Edit ACL** isn't available, its tooltip says why, for example because a vote is already open or a recovery is in progress on one of the ACL's backups.
   </Step>
   <Step title="Change members, roles and the policy">
     On **Members & Roles**, search for someone to add and pick their role, remove members, or change a member's role between **Normal**, **Veto** and **Must approve**. You can also change the policy type or its threshold. Each row shows whether that person is being added, being removed, or having their role changed.
 
-    As in the Create ACL wizard, you can't continue if the ACL left after the change could never pass a vote. For example, you can't set an Exact count of 4 while only 3 members would remain.
+    As when you create an ACL, you can't continue if the ACL left after the change could never pass a vote. For example, you can't set an Exact count of 4 while only 3 members would remain.
   </Step>
   <Step title="Review the vote">
     On **Review Vote**, check **Your changes** and the before and after view of the policy. The page lists who votes and the rule the vote passes under. If someone being removed is a **Veto** or **Must approve** member, Control points out that they can block their own removal.
