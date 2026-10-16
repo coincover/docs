@@ -17,7 +17,7 @@ No integration work is needed on the Coinbase side — CoinCover works alongside
 | --- | --- |
 | Wallet | Coinbase Prime Onchain Wallet (non-custodial) |
 | What CoinCover holds | An encrypted copy of your onchain wallet **recovery passphrase** — never your onchain key or key shards |
-| Backup mechanism | Encrypted client-side with the CoinCover Key Vault CLI, using a CoinCover RSA-4096 key; only ciphertext is uploaded |
+| Backup mechanism | Encrypted client-side with the CoinCover Key Vault CLI, using a CoinCover HOT or COLD RSA-4096 key; only ciphertext is uploaded |
 | Backup check | Recovery Readiness in CoinCover Control confirms the key can be rebuilt and the stored file is unchanged |
 | Recovery | Requested and gated through CoinCover Control by your Access Control List; released encrypted to your GPG public key |
 | Restoring access | Done in Coinbase Prime — **Settings → Onchain → Key Management** |
@@ -55,16 +55,23 @@ Backup is a one-time step, done by your onchain signer once the recovery passphr
   <Step title="Confirm the identity for this backup">
     Use your saved **User ID** and **Customer name**, or enter new ones. Use a customer name that matches your organisation in Control.
   </Step>
-  <Step title="Choose a HOT key pair and RSA only">
-    Select **HOT key pair**, then **RSA only** as the protection mode. A recovery passphrase is well inside the RSA-only size limit (445 bytes), and RSA only means the released file is the passphrase itself — there's no second backup passphrase to keep safe.
+  <Step title="Choose HOT or COLD, then RSA only">
+    Choose the CoinCover key pair that protects your backup:
 
-    The key pair choice is permanent for this backup.
+    | Key pair | When to use it |
+    | --- | --- |
+    | **HOT** | The key is held online in CoinCover's enclave. Recovery is released as soon as your approvers sign off. |
+    | **COLD** | The key is generated and held offline in CoinCover's geo-redundant vault, for the strictest security. Recovery takes longer, because CoinCover's team retrieves the key before release. |
+
+    Use the **Control ID** CoinCover issued for the key pair you choose. The choice is permanent for this backup.
+
+    Then select **RSA only** as the protection mode. A recovery passphrase is well inside the RSA-only size limit (445 bytes), and RSA only means the released file is the passphrase itself — there's no second backup passphrase to keep safe.
   </Step>
   <Step title="Name the backup and select the file">
     Enter a **Backup name** (for example `Coinbase Prime recovery passphrase`) and a **Backup ID** (for example `01`). In the file browser, go to the folder where you saved the passphrase and select the `.txt` file.
   </Step>
   <Step title="Enter your Control ID and upload">
-    Check the backup summary, then enter the **Control ID** CoinCover gave you. Review the final summary and confirm **Proceed?**. The CLI allocates a CoinCover HOT RSA-4096 key, encrypts the file on your machine, uploads the ciphertext, and verifies the checksum.
+    Check the backup summary, then enter the **Control ID** CoinCover gave you. Review the final summary and confirm **Proceed?**. The CLI allocates a CoinCover HOT or COLD RSA-4096 key, encrypts the file on your machine, uploads the ciphertext, and verifies the checksum.
 
     On success you'll see the `backup_id`, `key_id` and the path to a receipt saved under `~/.coincover/receipts/`. Keep the receipt.
 
@@ -73,7 +80,7 @@ Backup is a one-time step, done by your onchain signer once the recovery passphr
     </Note>
   </Step>
   <Step title="Confirm the backup in CoinCover Control">
-    In Control, open your organisation, go to **Backups**, and open the new backup — it shows CoinCover as the partner and **Hot** as the recovery type. On the **Assurance** tab, choose **Run check now**. Both checks should pass:
+    In Control, open your organisation, go to **Backups**, and open the new backup — it shows CoinCover as the partner and **Hot** or **Cold** as the recovery type, matching the key pair you chose. On the **Assurance** tab, choose **Run check now**. Both checks should pass:
 
     - **Key rebuilt** — CoinCover rebuilds the key from its stored parts and confirms it matches.
     - **File unchanged** — CoinCover decrypts the stored file and confirms it matches what you uploaded.
@@ -101,7 +108,7 @@ Use recovery when you need the passphrase back — most often because every onch
     Each ACL member is notified, re-verifies their identity, and approves or rejects. Approval progress shows on the recovery. Nothing is released until the ACL's approval threshold is met. See [Approve or reject a recovery request](/guides/control/approve-recovery-request).
   </Step>
   <Step title="Download the recovery package">
-    When the recovery shows **Recovery ready**, choose **Recover packages** to download a ZIP. An approved recovery can be downloaded at most **3 times**, within **3 days**.
+    For a **COLD** backup, CoinCover's team retrieves the key from offline storage first — Control tells you this is happening and notifies you when the download is ready. When the recovery shows **Recovery ready**, choose **Recover packages** to download a ZIP. An approved recovery can be downloaded at most **3 times**, within **3 days**.
   </Step>
   <Step title="Decrypt the passphrase">
     The ZIP contains your passphrase file as a PGP-encrypted message. Decrypt it with your **GPG private key** — for example `gpg --decrypt "Coinbase Recovery Phrase.txt"`, or your GPG tool's decrypt option. The result is your original recovery passphrase.
