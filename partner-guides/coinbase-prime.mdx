@@ -61,7 +61,7 @@ Backup is a one-time step, done by your onchain signer once the recovery passphr
     | Key pair | When to use it |
     | --- | --- |
     | **HOT** | The key is held online in CoinCover's enclave. Recovery is released as soon as your approvers sign off. |
-    | **COLD** | The key is generated and held offline in CoinCover's geo-redundant vault, for the strictest security. Recovery takes longer, because CoinCover's team retrieves the key before release. |
+    | **COLD** | The key is generated and held offline in CoinCover's geo-redundant vault, for the strictest security. CoinCover's team retrieves the key before release, within **24 hours** of your approvers signing off. |
 
     Use the **Control ID** CoinCover issued for the key pair you choose. The choice is permanent for this backup.
 
@@ -108,7 +108,7 @@ Use recovery when you need the passphrase back — most often because every onch
     Each ACL member is notified, re-verifies their identity, and approves or rejects. Approval progress shows on the recovery. Nothing is released until the ACL's approval threshold is met. See [Approve or reject a recovery request](/guides/control/approve-recovery-request).
   </Step>
   <Step title="Download the recovery package">
-    For a **COLD** backup, CoinCover's team retrieves the key from offline storage first — Control tells you this is happening and notifies you when the download is ready. When the recovery shows **Recovery ready**, choose **Recover packages** to download a ZIP. An approved recovery can be downloaded at most **3 times**, within **3 days**.
+    For a **COLD** backup, CoinCover's team retrieves the key from offline storage first, within **24 hours** of approval — Control tells you this is happening and notifies you when the download is ready. When the recovery shows **Recovery ready**, choose **Recover packages** to download a ZIP. An approved recovery can be downloaded at most **3 times**, within **3 days**.
   </Step>
   <Step title="Decrypt the passphrase">
     The ZIP contains your passphrase file as a PGP-encrypted message. Decrypt it with your **GPG private key** — for example `gpg --decrypt "Coinbase Recovery Phrase.txt"`, or your GPG tool's decrypt option. The result is your original recovery passphrase.
