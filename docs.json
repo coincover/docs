@@ -74,6 +74,7 @@
             "icon": "sliders",
             "pages": [
               "guides/control/get-started",
+              "guides/control/security-keys",
               "guides/control/approval-control-list",
               "guides/control/approve-list-change",
               "guides/control/recover-key-material",

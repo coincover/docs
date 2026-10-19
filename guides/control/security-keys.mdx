@@ -1,0 +1,130 @@
+---
+title: "Set up your security keys"
+sidebarTitle: "Security keys"
+description: "Register the hardware security keys or passkeys you use to sign in to CoinCover Control and confirm sensitive actions, and what to do if you lose one."
+icon: "fingerprint"
+---
+
+A security key proves it's really you by asking for a tap on a physical device. In CoinCover Control, your keys can do two jobs:
+
+- **Sign-in:** as your second factor after your password or magic link.
+- **Sensitive actions:** if your organisation requires it, you confirm actions such as voting on a recovery request with a tap of your key.
+
+You register a key once and Control uses it for both.
+
+## What you can use
+
+| Type | Examples |
+| --- | --- |
+| **Hardware security key** | A FIDO2 key such as a YubiKey, connected by USB or NFC. |
+| **Passkey** | Touch ID or Face ID on a Mac or iPhone, Windows Hello, or a passkey saved in your password manager. |
+
+Your organisation may limit this, for example to hardware keys only, or to particular models such as YubiKeys. Control tells you if a key isn't accepted. You need an up-to-date browser such as Chrome, Edge, Safari or Firefox.
+
+<Tip>
+  New to hardware keys? Your key's manufacturer covers device set-up, such as creating a PIN. For YubiKeys, see [Yubico's set-up guide](https://www.yubico.com/setup/). Your PIN is stored on the key, never on our servers.
+</Tip>
+
+## Before you start
+
+If your organisation requires security keys, have **two** ready before you sign in — one for daily use and a backup — unless CoinCover has agreed a different number with your organisation. Keep the backup somewhere safe and separate from your main key.
+
+## Register your keys
+
+There are two places you might be asked to register a key.
+
+### When you set up two-factor authentication
+
+On your first sign-in, Control asks you to **Set up two-factor authentication**.
+
+<Steps>
+  <Step title="Choose Security key">
+    Select **Security key**. You only see the options your organisation allows.
+  </Step>
+  <Step title="Tap your key">
+    Insert your key, or hold it to your phone for NFC, and tap it when your browser asks. To use a passkey instead, follow your browser's prompt for Touch ID, Face ID, Windows Hello or your password manager.
+  </Step>
+  <Step title="Sign in again">
+    Once the key is registered, sign in again and use it to confirm it's you.
+  </Step>
+</Steps>
+
+### When your organisation requires keys
+
+If your organisation requires security keys for sensitive actions, Control shows **Let's secure your account** until you've registered enough keys. It takes about three minutes.
+
+<Steps>
+  <Step title="Register your first key">
+    Give the key a name you'll recognise, such as *Office YubiKey 5C*. Insert it and tap it when your browser asks.
+  </Step>
+  <Step title="Register your backup key">
+    Remove the first key, then do the same with your backup key.
+  </Step>
+  <Step title="Finish">
+    When you see **You're all set**, select **Go to dashboard**.
+  </Step>
+</Steps>
+
+## Confirm a sensitive action
+
+When your organisation requires security keys, Control asks you to **Verify your identity** before:
+
+- voting to approve or reject a recovery request, or cancelling that vote
+- voting on a change to an Access Control List, or cancelling that vote
+- adding or removing a security key
+
+Select **Authorise** and tap your key. You won't be asked again for the next 30 minutes, unless your organisation has set a different time.
+
+## Manage your keys
+
+Open the profile menu at the top right, select **Profile**, then **Security**. Under **Security keys** you can see each key, when it was registered and when it was last used.
+
+- **Add a key:** select **Add security key** and follow the prompts.
+- **Remove a key:** you can't remove your only second factor, so set up an authenticator app or another key first. If your organisation requires a number of keys, register a replacement before removing one.
+
+A key marked *Not accepted by this organisation's security key policy* doesn't meet your organisation's rules. Register one that does.
+
+## If you lose a key
+
+<Steps>
+  <Step title="Sign in with your backup">
+    Use your backup key, or your authenticator app if you've set one up.
+  </Step>
+  <Step title="Register a replacement">
+    In **Profile** → **Security**, select **Add security key** and register the new one.
+  </Step>
+  <Step title="Remove the lost key">
+    Remove the lost key from the list so it can no longer be used.
+  </Step>
+</Steps>
+
+If you've lost every key and don't have an authenticator app, or you've already registered as many keys as your organisation allows, contact [support@coincover.com](mailto:support@coincover.com). We reset your two-factor authentication and you register your keys again.
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="This browser does not support security keys">
+    Update your browser, or switch to a current version of Chrome, Edge, Safari or Firefox.
+  </Accordion>
+  <Accordion title="My key isn't accepted">
+    Your organisation may only allow hardware keys, or particular models. Try a different key, or ask your Organisation Owner which keys are allowed.
+  </Accordion>
+  <Accordion title="My organisations have conflicting security key policies">
+    If you belong to more than one organisation, a key has to meet every organisation's rules. Contact CoinCover support and we'll help you find a key that works for all of them.
+  </Accordion>
+  <Accordion title="The prompt timed out">
+    Each request to tap your key lasts five minutes. Start again and tap your key when your browser asks.
+  </Accordion>
+</AccordionGroup>
+
+## For Organisation Owners
+
+CoinCover sets up security keys for your organisation. Contact your account manager or [support@coincover.com](mailto:support@coincover.com) to:
+
+- require a security key as the second factor at sign-in
+- require a security key to confirm sensitive actions
+- set how many keys each person registers (two by default) and the maximum they can hold (three by default)
+- allow hardware keys only, or particular models such as YubiKeys
+- change how long a confirmation lasts (30 minutes by default)
+
+If your organisation uses SSO, sign-in MFA is handled by your identity provider, but you can still require security keys for sensitive actions.
