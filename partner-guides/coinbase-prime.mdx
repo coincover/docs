@@ -1,0 +1,157 @@
+---
+title: "Coinbase Prime"
+sidebarTitle: "Coinbase Prime"
+description: "Backup and recovery for the Coinbase Prime Onchain Wallet — an encrypted backup of your recovery passphrase with the CoinCover CLI, and ACL-approved recovery through CoinCover Control."
+icon: "building-columns"
+---
+
+The Coinbase Prime **Onchain Wallet** is non-custodial: your organisation holds full control of its onchain key, and access depends on one secret — the **recovery passphrase** created when your onchain signer first sets up the wallet. Coinbase cannot restore it for you. If every onchain signer loses access and the passphrase is lost too, the wallet can't be restored.
+
+CoinCover protects that passphrase. You encrypt it on your own machine with the **CoinCover Key Vault CLI** and store only the ciphertext with CoinCover. If you ever need it back, you raise a recovery in **CoinCover Control**, your approvers sign off, and the passphrase is released to you encrypted with your own GPG key. You then use it in Coinbase Prime to verify, or restore access to, your onchain key.
+
+No integration work is needed on the Coinbase side — CoinCover works alongside Coinbase Prime's native recovery passphrase.
+
+## At a glance
+
+| Attribute | Detail |
+| --- | --- |
+| Wallet | Coinbase Prime Onchain Wallet (non-custodial) |
+| What CoinCover holds | An encrypted copy of your onchain wallet **recovery passphrase** — never your onchain key or key shards |
+| Backup mechanism | Encrypted client-side with the CoinCover Key Vault CLI, using a CoinCover HOT or COLD RSA-4096 key; only ciphertext is uploaded |
+| Backup check | Recovery Readiness in CoinCover Control confirms the key can be rebuilt and the stored file is unchanged |
+| Recovery | Requested and gated through CoinCover Control by your Access Control List; released encrypted to your GPG public key |
+| Restoring access | Done in Coinbase Prime — **Settings → Onchain → Key Management** |
+
+## Before you start
+
+| Requirement | Notes |
+| --- | --- |
+| **Coinbase Prime Onchain Wallet** | Onchain setup complete, and your onchain signer has generated the onchain key and recovery passphrase in the Coinbase Prime Approvals App. |
+| **CoinCover Control organisation** | Your organisation is set up in Control, with team members invited. See [Get started with CoinCover Control](/guides/control/get-started). |
+| **Control ID** | Provided by CoinCover for your Coinbase Prime backup. It links the backup you upload to your organisation in Control. |
+| **CoinCover Key Vault CLI and API key** | Installed on the machine you'll back up from, with the API key CoinCover issued at onboarding. See the [CLI integration guide](/institutional-recovery/cli-integration-guide). |
+| **GPG key pair** | Needed at recovery time, not backup. See [Create a GPG key pair](/guides/control/create-gpg-key). |
+
+## Backup
+
+Backup is a one-time step, done by your onchain signer once the recovery passphrase exists. It takes a few minutes.
+
+<Steps>
+  <Step title="Generate your onchain key and recovery passphrase in Coinbase Prime">
+    In Coinbase Prime, an administrator designates the initial **onchain signer**, and the designation is approved by your team's consensus policy. The onchain signer then scans the QR code with the **Coinbase Prime Approvals App**, signs in with their Prime credentials and mobile security key, and completes key generation.
+
+    The app shows the **recovery passphrase**. It covers the whole team, and the onchain signer is the only team member who sees it — so this is the moment to back it up. See Coinbase's [Get started with the Prime Onchain Wallet](https://help.coinbase.com/en/prime/onchain-wallet/get-started-coinbase-prime-onchain-wallet).
+  </Step>
+  <Step title="Save the passphrase to a plain-text file">
+    Type the passphrase, exactly as shown, into a plain-text (`.txt`) file — one line, words separated by single spaces. Save it **locally**, on the machine where you'll run the CLI.
+
+    <Warning>
+      This file is your passphrase in plaintext. Don't save it to a cloud-synced folder, email it, or paste it into chat. Delete it securely once the backup is confirmed.
+    </Warning>
+  </Step>
+  <Step title="Start the CLI and choose your environment">
+    Run `coincover`. Check the environment shown at the top is the one you were onboarded to; if not, choose **Switch environment / API key** and enter the API key for that environment. Then choose **Back up key material**.
+  </Step>
+  <Step title="Confirm the identity for this backup">
+    Use your saved **User ID** and **Customer name**, or enter new ones. Use a customer name that matches your organisation in Control.
+  </Step>
+  <Step title="Choose HOT or COLD, then RSA only">
+    Choose the CoinCover key pair that protects your backup:
+
+    | Key pair | When to use it |
+    | --- | --- |
+    | **HOT** | The key is held online in CoinCover's enclave. Recovery is released as soon as your approvers sign off. |
+    | **COLD** | The key is generated and held offline in CoinCover's geo-redundant vault, for the strictest security. CoinCover's team retrieves the key before release, within **24 hours** of your approvers signing off. |
+
+    Use the **Control ID** CoinCover issued for the key pair you choose. The choice is permanent for this backup.
+
+    Then select **RSA only** as the protection mode. A recovery passphrase is well inside the RSA-only size limit (445 bytes), and RSA only means the released file is the passphrase itself — there's no second backup passphrase to keep safe.
+  </Step>
+  <Step title="Name the backup and select the file">
+    Enter a **Backup name** (for example `Coinbase Prime recovery passphrase`) and a **Backup ID** (for example `01`). In the file browser, go to the folder where you saved the passphrase and select the `.txt` file.
+  </Step>
+  <Step title="Enter your Control ID and upload">
+    Check the backup summary, then enter the **Control ID** CoinCover gave you. Review the final summary and confirm **Proceed?**. The CLI allocates a CoinCover HOT or COLD RSA-4096 key, encrypts the file on your machine, uploads the ciphertext, and verifies the checksum.
+
+    On success you'll see the `backup_id`, `key_id` and the path to a receipt saved under `~/.coincover/receipts/`. Keep the receipt.
+
+    <Note>
+      Upload can't be undone once it completes. If you entered the wrong file or Control ID, contact CoinCover rather than uploading a second copy.
+    </Note>
+  </Step>
+  <Step title="Confirm the backup in CoinCover Control">
+    In Control, open your organisation, go to **Backups**, and open the new backup — it shows CoinCover as the partner and **Hot** or **Cold** as the recovery type, matching the key pair you chose. On the **Assurance** tab, choose **Run check now**. Both checks should pass:
+
+    - **Key rebuilt** — CoinCover rebuilds the key from its stored parts and confirms it matches.
+    - **File unchanged** — CoinCover decrypts the stored file and confirms it matches what you uploaded.
+
+    Once both pass, securely delete the plaintext file from your machine.
+  </Step>
+  <Step title="Assign an Access Control List">
+    On the backup's **Overview** tab, choose **Assign ACL** and attach the ACL whose members will approve a recovery. Until an ACL is assigned, nothing can be recovered. See [Set up your Access Control List](/guides/control/approval-control-list).
+  </Step>
+</Steps>
+
+<Note>
+  CoinCover only ever holds your passphrase **encrypted**, under a key generated in a hardware-isolated enclave. Neither CoinCover nor its staff can read it, and it is only released when your ACL approves.
+</Note>
+
+## Recovery
+
+Use recovery when you need the passphrase back — most often because every onchain signer has lost access, or to verify or replace your backup in Coinbase Prime.
+
+<Steps>
+  <Step title="Start the recovery in CoinCover Control">
+    Open the backup in Control and choose **Start recovery**. Provide your **OpenPGP public key** (armored text, or a `.asc`, `.txt`, `.gpg` or `.pgp` file). CoinCover uses it to encrypt the released passphrase so only you can open it.
+  </Step>
+  <Step title="Your approvers sign off">
+    Each ACL member is notified, re-verifies their identity, and approves or rejects. Approval progress shows on the recovery. Nothing is released until the ACL's approval threshold is met. See [Approve or reject a recovery request](/guides/control/approve-recovery-request).
+  </Step>
+  <Step title="Download the recovery package">
+    For a **COLD** backup, CoinCover's team retrieves the key from offline storage first, within **24 hours** of approval — Control tells you this is happening and notifies you when the download is ready. When the recovery shows **Recovery ready**, choose **Recover packages** to download a ZIP. An approved recovery can be downloaded at most **3 times**, within **3 days**.
+  </Step>
+  <Step title="Decrypt the passphrase">
+    The ZIP contains your passphrase file as a PGP-encrypted message. Decrypt it with your **GPG private key** — for example `gpg --decrypt "Coinbase Recovery Phrase.txt"`, or your GPG tool's decrypt option. The result is your original recovery passphrase.
+
+    Because the backup uses RSA only, there's no CLI recovery step — the file you decrypt is the passphrase.
+  </Step>
+  <Step title="Use the passphrase in Coinbase Prime">
+    In Coinbase Prime, go to **Settings → Onchain → Key Management**:
+
+    | Action | When to use it |
+    | --- | --- |
+    | **Verify recovery passphrase** | Confirm the passphrase is correct and can restore access — a good periodic drill. |
+    | **Restore Onchain Key Access** | Every onchain signer has lost access to the onchain key. An existing onchain signer is designated as the key recoverer, your consensus policy approves, and the recoverer enters the passphrase to restore the key. |
+    | **Replace recovery backup** | Generate a new recovery passphrase. Needs onchain key access, not the passphrase. Back up the new passphrase with CoinCover afterwards. |
+
+    Coinbase advises against starting key recovery while any onchain signer still holds a key shard. See Coinbase's [Restoring access to an Onchain Wallet](https://help.coinbase.com/en/prime/onchain-wallet/restoring-access-to-an-onchain-wallet) and [Verify your recovery passphrase](https://help.coinbase.com/en/prime/onchain-wallet/verify-your-prime-onchain-wallet-recovery-passphrase).
+  </Step>
+</Steps>
+
+<Warning>
+  If you **replace** your recovery backup in Coinbase Prime, the passphrase CoinCover holds no longer restores your wallet. Back up the new passphrase straight away and tell CoinCover, so the old backup can be retired.
+</Warning>
+
+<Card title="Recover key material through CoinCover Control" icon="key" href="/guides/control/recover-key-material">
+  The step-by-step recovery walkthrough in Control — raising the request, gathering approvals, and collecting the released material.
+</Card>
+
+## What's next
+
+<CardGroup cols={2}>
+  <Card title="CLI integration guide" icon="terminal" href="/institutional-recovery/cli-integration-guide">
+    Install the CoinCover Key Vault CLI and run the full backup flow.
+  </Card>
+
+  <Card title="Set up your ACL" icon="user-shield" href="/guides/control/approval-control-list">
+    Decide who approves the recovery of your Coinbase Prime backup.
+  </Card>
+
+  <Card title="Create a GPG key" icon="lock" href="/guides/control/create-gpg-key">
+    Generate the key pair you need to receive a recovery.
+  </Card>
+
+  <Card title="Partners overview" icon="handshake" href="/partner-guides/overview">
+    All CoinCover partner integrations.
+  </Card>
+</CardGroup>
