@@ -1,7 +1,7 @@
 ---
 title: "Get started with CoinCover Control"
 sidebarTitle: "Get started"
-description: "From your invitation to your first sign-in — creating your account, setting up two-factor authentication, and completing identity verification."
+description: "From your invitation to your first sign-in — how your organisation signs in, creating your account, setting up two-factor authentication, and completing identity verification."
 icon: "circle-play"
 ---
 
@@ -12,6 +12,49 @@ This guide takes a new user from an invitation through to their first sign-in. T
 ## Before you start
 
 You need an invitation — you can't self-register. An Organisation Owner (or CoinCover) invites you by email.
+
+## How your organisation signs in
+
+CoinCover sets up sign-in for each organisation. There are three parts to it: how users sign in, which second factor they use, and whether sensitive actions need a hardware security key.
+
+### Sign-in method
+
+| Method | How it works |
+| --- | --- |
+| **Password** | Users sign in with their email address and a password. This is the default. |
+| **Magic link** | Users enter their email address and we send them a one-time sign-in link. The link expires after 15 minutes and works once. Password sign-in is turned off. |
+| **Password and magic link** | Users choose either option on the sign-in page. |
+| **Single sign-on (SSO)** | Users sign in through your identity provider. You can make SSO the only way in, or keep passwords as a fallback. |
+
+SSO uses OpenID Connect (OIDC) and is set up for Okta. If you use a different OIDC identity provider, talk to us. SAML isn't supported, and magic links can't be combined with SSO.
+
+<Accordion title="What to know before setting up SSO">
+  - **You send us** your identity provider's issuer URL, plus the client ID and client secret of the app you create for Control.
+  - **We send you** the redirect URI to add to that app. We can also give you a sign-in URL if you want a Control tile on your Okta dashboard.
+  - **People still need an invitation.** SSO doesn't create Control accounts on its own. Someone can sign in with SSO only after they've been invited to Control.
+  - **Roles are managed in Control.** Groups and claims in your identity provider aren't mapped to Control roles.
+  - **Your identity provider must send a verified email address.** It has to match the email address the person was invited with.
+  - **MFA happens in your identity provider.** Control doesn't ask SSO users for a second factor at sign-in, so enforce MFA in your identity provider. A security key requirement for sensitive actions (below) still applies.
+</Accordion>
+
+### Two-factor authentication
+
+Every user who signs in with a password or magic link sets up a second factor the first time they sign in. Two types are available:
+
+| Second factor | How it works |
+| --- | --- |
+| **Authenticator app** | A 6-digit code from an app such as Google Authenticator, Microsoft Authenticator, Authy or 1Password. |
+| **Security key** | A hardware security key such as a YubiKey, or a passkey stored on the user's device. |
+
+By default, users choose either one. We can limit your organisation to authenticator apps only, or to security keys only. A change applies to new set-ups; methods that users have already set up keep working. SMS codes aren't supported.
+
+### Security keys for sensitive actions
+
+We can also require your users to confirm sensitive actions with a security key, such as voting on a recovery request or on a change to an Access Control List. Users register their keys the first time they sign in after this is turned on. See [Set up your security keys](/guides/control/security-keys).
+
+<Tip>
+  To change how your organisation signs in, set up SSO, or require security keys, contact your CoinCover account manager or [support@coincover.com](mailto:support@coincover.com).
+</Tip>
 
 ## Set up your account
 
@@ -25,21 +68,31 @@ You need an invitation — you can't self-register. An Organisation Owner (or Co
   <Step title="Verify your email">
     CoinCover sends a verification code to your email address. Enter it to confirm your account. If it doesn't arrive, request a new code and check your spam folder.
   </Step>
-  <Step title="Set up your authenticator app">
-    Every account uses an authenticator app as a second factor. Scan the on-screen QR code with an app such as Google Authenticator, Authy, 1Password or Microsoft Authenticator — or enter the key manually — then enter the code it generates.
+  <Step title="Set up two-factor authentication">
+    Choose how you'll confirm it's you each time you sign in. You only see the options your organisation allows.
+
+    - **Authenticator app:** scan the on-screen QR code with your authenticator app, or enter the key manually, then enter the 6-digit code it generates.
+    - **Security key:** insert your key and tap it when your browser asks, or use a passkey on your device. See [Set up your security keys](/guides/control/security-keys).
 
     <Warning>
-      Keep your authenticator safe. If you lose access to it, contact CoinCover support to regain access to your account.
+      Keep your second factor safe. If you use security keys, register a backup key as well. If you lose access to every method you've set up, contact CoinCover support to regain access to your account.
     </Warning>
   </Step>
   <Step title="Complete identity verification">
     On your first sign-in you complete an identity check. It runs in your browser and takes a few minutes. Identity verification protects every sensitive action in Control, so it has to be completed before you can use the platform.
   </Step>
+  <Step title="Register your security keys, if asked">
+    If your organisation requires security keys for sensitive actions, Control asks you to register them before you continue. By default, that's two keys: one you use day to day and a backup. See [Set up your security keys](/guides/control/security-keys).
+  </Step>
 </Steps>
 
 <Note>
-  Depending on how your organisation is set up, you may sign in with your own single sign-on instead of a password. If so, follow your provider's prompts — the rest of Control works the same way.
+  **If your organisation uses SSO**, you don't create a password, verify your email with a code, or set up a second factor in Control. Enter the email address your invitation was sent to, select **Continue with Okta**, and follow your provider's prompts. You still complete identity verification, and register security keys if your organisation requires them.
 </Note>
+
+## Signing in
+
+Enter your email address first. Control then shows the sign-in options your organisation uses: **Sign in** with a password, **Send magic link**, or **Continue with Okta**. After a password or magic link, confirm it's you with your authenticator app or security key. If you've set up both, you can choose either.
 
 ## Finding your way around
 
@@ -59,6 +112,10 @@ The bell at the top right shows anything waiting on you — a recovery to approv
 <CardGroup cols={2}>
   <Card title="Set up your Access Control List" icon="user-shield" href="/guides/control/approval-control-list">
     Decide who can approve the recovery of a backup.
+  </Card>
+
+  <Card title="Set up your security keys" icon="fingerprint" href="/guides/control/security-keys">
+    Register, manage and replace the keys you use to sign in and approve.
   </Card>
 
   <Card title="Recover key material" icon="key" href="/guides/control/recover-key-material">
