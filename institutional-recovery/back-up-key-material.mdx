@@ -220,6 +220,14 @@ curl "$COINCOVER_BASE_URL/v1/hot/backups/$BACKUP_ID/verify" \
 
 `verify-key` returns `is_key_valid`; `verify-backup` returns `is_backup_valid`. Treat a `false` from either as a hard failure and escalate before relying on the material.
 
+<Note>
+  These checks run on `HOT` keys and their backups only. A `COLD` key returns `400`.
+</Note>
+
+<Tip>
+  If your organisation uses CoinCover Control, your team can also run these checks there, with a signed record and history for every check. See [Check a backup with Assurance](/guides/control/check-a-backup).
+</Tip>
+
 ## Step 7 — Test before you ship
 
 Run through the going to production checklist before cutting production traffic to live keys. The most common issues:
