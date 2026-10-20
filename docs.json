@@ -79,6 +79,7 @@
               "guides/control/recover-key-material",
               "guides/control/create-gpg-key",
               "guides/control/approve-recovery-request",
+              "institutional-recovery/recovery-readiness",
               "guides/vault-sync"
             ]
           }
