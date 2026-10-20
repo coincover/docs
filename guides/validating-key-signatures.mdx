@@ -66,7 +66,7 @@ The shape is the same in every environment. This example is production; UAT publ
 | `crv` | Curve. Assignment signatures use `P-256`. |
 | `alg` | Algorithm. Assignment signatures use `ES256` (ECDSA with SHA-256). |
 | `use` | Key usage. Always `sig` for signature verification. |
-| `kid` | Key ID. Cache and look up keys by environment and this value. |
+| `kid` | Key ID in the JWKS document. Use it when caching entries, not as a field on the key-assignment response. |
 | `x` / `y` | EC public key coordinates (Base64URL-encoded). |
 | `coincover:purposes` | What this key is allowed to sign. For key attestation, require `assignment-sig`. |
 | `coincover:validFrom` | Instant from which the key may be used. Ignore keys that are not yet valid. |
@@ -77,10 +77,10 @@ Only accept a JWKS entry that is `EC` / `P-256` / `ES256` / `use: sig`, includes
 
 <Steps>
   <Step title="Load CoinCover's signing keys">
-    Fetch the JWKS for the environment you called, or use a cache indexed by environment and `kid` (see [Caching JWKS](#caching-jwks)). Keep only keys that match the assignment-signing constraints above.
+    Fetch the JWKS for the environment you called, or use a cached copy (see [Caching JWKS](#caching-jwks)). Keep only keys that match the assignment-signing constraints above.
   </Step>
   <Step title="Select the verification key">
-    Look the key up by `kid` when you have one. Otherwise, use the eligible assignment-signing keys from the cache. Never verify with the `public_key` in the key-assignment response — that is the recovery key, not CoinCover's attestation key.
+    Use the eligible assignment-signing keys from that JWKS. The key-assignment response does not include a `kid`. Never verify with the `public_key` in the response — that is the recovery key, not CoinCover's attestation key.
   </Step>
   <Step title="Decode the signature">
     Decode `signature` from standard Base64 to raw bytes.
@@ -105,7 +105,7 @@ When you sent `sign_with`, also check that the attested values match the assignm
 - `signed_fields` is exactly the list you requested, in that order.
 - The parsed `signed_payload` includes `public_key` matching the response.
 - Any other bound field you asked for (`key_id`, `user_id`, `external_customer_id`, and so on) matches the assignment you just made.
-- If you bound `key_fingerprint`, it equals the SHA-256 of the public-key **bytes** (hex-decode `public_key`, then hash), not the SHA-256 of the hex string.
+- If you bound `key_fingerprint`, it equals the SHA-256 of the public-key **bytes** (hex-decode `public_key`, then hash), encoded as **lowercase hex** — not the SHA-256 of the hex string, and not uppercase hex.
 
 A valid signature over unexpected values is still untrusted. Stop and escalate.
 
@@ -113,9 +113,9 @@ How to request the extra fields is covered in each product's integration guide: 
 
 ## Caching JWKS
 
-Each JWKS endpoint returns `Cache-Control: max-age=600, must-revalidate` (ten minutes). Cache the document for that environment and **index the keys by `kid`**. Lookups should hit that map rather than refetching on every key assignment. Keep a separate cache (or a composite key of environment + `kid`) for UAT and production.
+Each JWKS endpoint returns `Cache-Control: max-age=600, must-revalidate` (ten minutes). Cache the document for that environment, indexed by the `kid` on each JWKS entry, rather than refetching on every key assignment. Keep a separate cache (or a composite key of environment + `kid`) for UAT and production.
 
-During rotation the document can contain more than one key. `kid` is how you pick the right one within that environment. If verification fails because the `kid` is unknown, refresh the JWKS for that environment and retry once as the signing key may have rotated. Do not pin a single key forever.
+During rotation the document can contain more than one key. Because the assignment response does not carry a `kid`, verify against the eligible assignment-signing keys in the cached set. If none of them verify, refresh the JWKS for that environment and retry once as the signing key may have rotated. Do not pin a single key forever.
 
 Respect `max-age`. A cache that never expires will miss rotation; a cache that never stores will add latency and a runtime dependency on the JWKS host for every assignment.
 
@@ -125,9 +125,9 @@ Respect `max-age`. A cache that never expires will miss rotation; a cache that n
 | --- | --- |
 | Re-serialising `signed_payload` | Verify over the exact string we returned. Re-stringifying JSON changes key order and whitespace and will fail. |
 | Verifying with the recovery `public_key` | Use the JWKS attestation key, not the key in the assignment response. |
-| Hashing the hex string for `key_fingerprint` | Hex-decode `public_key` first, then SHA-256 the bytes. |
+| Hashing the hex string for `key_fingerprint` | Hex-decode `public_key` first, then SHA-256 the bytes. The digest is lowercase hex. |
 | IEEE P1363 signature encoding | The signature is DER-encoded ECDSA. Configure your verifier accordingly. |
-| Stale JWKS cache | If the `kid` is unknown, refresh the JWKS for that environment and retry once. |
+| Stale JWKS cache | If none of the cached keys verify, refresh the JWKS for that environment and retry once. |
 | Wrong JWKS for the environment | Verify UAT signatures with the UAT JWKS, production signatures with the production JWKS. The `kid` values can match across environments; the key material does not. |
 | Using a key with the wrong purpose | Require `assignment-sig` in `coincover:purposes`. |
 | Following redirects on the JWKS URL | Fetch the published URL directly over HTTPS. |
