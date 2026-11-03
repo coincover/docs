@@ -9,10 +9,6 @@ Dynamic embedded wallets support **offline recovery in a 2-of-2 setup**: the Dyn
 
 The integration is **retail and API-based**. Each end user verifies their identity, CoinCover issues a key for that user, and Dynamic encrypts the server share to it and sends it straight to CoinCover. CoinCover holds the encrypted server share, and the user's private key within our hardware-isolated key vault — never the client share. Recovery is a **return to the user's device**: after a fresh identity check, CoinCover re-encrypts the server share to a one-time key on the device, and the wallet is rebuilt there. The customer never handles key material, and recovery doesn't depend on Dynamic.
 
-<Note>
-  The Dynamic integration is in early access. [Talk to us](https://www.coincover.com/contact) to enable it for your environment.
-</Note>
-
 ## At a glance
 
 | Attribute | Detail |
