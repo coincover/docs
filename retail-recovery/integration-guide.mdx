@@ -192,21 +192,21 @@ Recovery is a restricted operation. We only release stored backups when we've se
 
 ### Step 1 — Re-verify identity
 
-Call `POST /v1/verification/start` to begin a new recovery-specific session. Monitor the status via your configured webhook, or poll `GET /v1/verification/status` if you need a synchronous read.
+Call `POST /v1/verification/start` to begin a new recovery-specific session. Monitor the status via your configured webhook, or poll `GET /v1/verification/{verification_id}/status` if you need a synchronous read.
 
-**Response (`GET /v1/verification/status`)**
+**Response (`GET /v1/verification/{verification_id}/status`)**
 
 ```json
 {
   "verification_id": "string",
-  "status": "pending | approved | declined | review",
+  "status": "CREATED | PENDING | NEEDS_REVIEW | APPROVED | DECLINED | FAILED | EXPIRED",
   "updated_at": "string (ISO timestamp)"
 }
 ```
 
 ### Step 2 — Recover the backup
 
-Once the inquiry status is `approved`, call `POST /v1/backup/recover`. You'll need the `verification_id` from Step 1 and a GPG public key — we use the GPG key to encrypt the recovered data on its way back to you. The orchestrator validates server-side that the verification is approved before releasing any backup material.
+Once the inquiry status is `APPROVED`, call `POST /v1/backup/recover`. You'll need the `verification_id` from Step 1 and a GPG public key — we use the GPG key to encrypt the recovered data on its way back to you. The orchestrator validates server-side that the verification is approved before releasing any backup material.
 
 The endpoint returns every backup item associated with that user and verification — the response is an array. If the user only ever stored one item, you'll get one entry back; if they stored several (up to three per call), you'll get them all.
 

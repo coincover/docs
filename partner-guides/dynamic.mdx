@@ -1,0 +1,118 @@
+---
+title: "Dynamic"
+sidebarTitle: "Dynamic"
+description: "Backup and recovery for Dynamic embedded wallets — an identity-verified backup of the server share, and recovery straight to the user's device."
+icon: "bolt"
+---
+
+Dynamic embedded wallets support **offline recovery in a 2-of-2 setup**: the Dynamic SDK creates a separate share set for a wallet, saves the **client share** to the user's Google Drive, and delivers the **server share** by webhook. Dynamic doesn't keep its half, so the two shares together can rebuild the wallet even if Dynamic is unavailable.
+
+The integration is **retail and API-based**. Each end user verifies their identity, CoinCover issues a key for that user, and Dynamic encrypts the server share to it and sends it straight to CoinCover. CoinCover holds the encrypted server share, and the user's private key within our hardware-isolated key vault — never the client share. Recovery is a **return to the user's device**: after a fresh identity check, CoinCover re-encrypts the server share to a one-time key on the device, and the wallet is rebuilt there. The customer never handles key material, and recovery doesn't depend on Dynamic.
+
+<Note>
+  The Dynamic integration is in early access. [Talk to us](https://www.coincover.com/contact) to enable it for your environment.
+</Note>
+
+## At a glance
+
+| Attribute | Detail |
+| --- | --- |
+| Wallet model | Dynamic embedded wallet; offline recovery share set, 2-of-2 |
+| Integration | API-based retail integration — an identity check, a per-user CoinCover key, and a Dynamic webhook that delivers the server share to CoinCover |
+| What CoinCover holds | The server share, encrypted to the user's CoinCover key, and that key's private half within our hardware-isolated key vault |
+| Where the client share lives | The user's Google Drive, written by the Dynamic SDK |
+| Recovery | Identity-verified return of the server share to the user's device, where the wallet is rebuilt with Dynamic's offline recovery |
+
+## Backup
+
+Backup starts with a one-time setup that connects your Dynamic environment to CoinCover. After that, it runs for each user when they back up their wallet.
+
+### One-time setup: connect Dynamic to CoinCover
+
+<Steps>
+  <Step title="CoinCover provides a webhook URL">
+    CoinCover gives you a webhook URL for your Dynamic environment as part of onboarding.
+  </Step>
+  <Step title="The customer creates the webhook in Dynamic">
+    In the Dynamic dashboard, go to **Developers → Webhooks** and add a webhook with the CoinCover URL, subscribed to the `wallet.offlineRecovery.created` event.
+  </Step>
+  <Step title="The customer shares the webhook details with CoinCover">
+    Send CoinCover the webhook ID, its signing secret and your Dynamic environment ID. CoinCover uses them to check the `x-dynamic-signature-256` signature on every delivery, so only shares from your environment are accepted.
+  </Step>
+</Steps>
+
+### Backing up a user's wallet
+
+<Steps>
+  <Step title="The user verifies their identity">
+    Your backend calls `POST /v1/verification/start` with an identifier for the user, and your app opens the Identity SDK with the `verification_id` it returns. The user completes the check (for example, an ID document and a selfie) inside your app, and the flow can be white-labelled. Continue once the status is `APPROVED`.
+  </Step>
+  <Step title="CoinCover issues a key for the user">
+    Your backend calls `POST /v1/key/generate` with the user's identifier and the approved `verification_id`. CoinCover generates an RSA key pair inside our hardware-isolated key vault and returns the public key, hex-encoded SPKI, with a signature.
+  </Step>
+  <Step title="The app creates the offline recovery shares">
+    Your app calls the Dynamic SDK's `createWaasOfflineRecoveryShares`, passing the CoinCover public key as `recoveryEncryptionPublicKey`, converted to base64. The SDK saves the client share to the user's Google Drive.
+  </Step>
+  <Step title="Dynamic delivers the server share to CoinCover">
+    Dynamic encrypts the server share to the CoinCover public key and sends it to CoinCover in the `wallet.offlineRecovery.created` webhook. The envelope's `kid` is the SHA-256 fingerprint of that key, which tells CoinCover which user it belongs to. CoinCover confirms within the key vault that the share can be decrypted, then stores it against the user.
+  </Step>
+</Steps>
+
+<Note>
+  Verify the `signature` returned with the public key against CoinCover's published JWKS before passing it to Dynamic — see [Validating key signatures](/guides/validating-key-signatures).
+</Note>
+
+<Note>
+  Your backend only makes the verification and key calls. It never sees either share: the client share goes from the Dynamic SDK to the user's Google Drive, and the server share goes from Dynamic to CoinCover, already encrypted.
+</Note>
+
+<Card title="Retail integration guide" icon="book-open" href="/retail-recovery/integration-guide">
+  The verification and key API calls, with full request and response details, are documented in the Retail integration guide.
+</Card>
+
+## Recovery
+
+Recovery is for when the user has lost access, or Dynamic is unavailable. It runs between the user's device, your backend and CoinCover — Dynamic doesn't need to be available.
+
+<Steps>
+  <Step title="The user verifies their identity again">
+    Your backend starts a new verification with the same user identifier, and the user completes it in your app. The identity provider compares it with the check from backup to confirm it's the same person. Continue only once the status is `APPROVED`. Each approved verification authorises one recovery.
+  </Step>
+  <Step title="The app creates a one-time key on the device">
+    Your app generates a new key pair on the user's device, just for this recovery. The private key stays on the device, using the platform's secure key handling, and is never stored or sent anywhere. Only the public key is sent on.
+  </Step>
+  <Step title="CoinCover returns the server share to the device">
+    Your backend calls `POST /v1/backup/recover` with the approved `verification_id` and the one-time public key as `rsa_public_key`. CoinCover decrypts the server share within our hardware-isolated key vault and re-encrypts it to the one-time key, so only that device can open it. Your backend passes it on without being able to read it.
+  </Step>
+  <Step title="The app rebuilds the private key">
+    Your app decrypts the server share with the one-time private key, downloads the client share from the user's Google Drive, and combines the two on the device with Dynamic's offline recovery (`offlineExportKey`). Dynamic's [offline recovery tool](https://github.com/dynamic-labs-oss/offline-recovery) is a working reference. The one-time key is then discarded.
+  </Step>
+</Steps>
+
+<Note>
+  Outside CoinCover's hardware-isolated key vault, the user's device is the only place the server share is ever readable. The one-time key exists only for that recovery, so there's nothing to intercept or steal in advance.
+</Note>
+
+<Card title="End result" icon="circle-check">
+  The user has their wallet's private key back on their own device, after proving who they are — without the customer or Dynamic handling any key material.
+</Card>
+
+## What's next
+
+<CardGroup cols={2}>
+  <Card title="Retail integration guide" icon="book-open" href="/retail-recovery/integration-guide">
+    The identity verification and key API in full.
+  </Card>
+
+  <Card title="UI components" icon="id-card" href="/retail-recovery/ui-components">
+    Embedding the Identity SDK in your app.
+  </Card>
+
+  <Card title="Fireblocks" icon="layer-group" href="/partner-guides/fireblocks">
+    The workspace and device-share MPC integration.
+  </Card>
+
+  <Card title="Partners overview" icon="handshake" href="/partner-guides/overview">
+    All CoinCover partner integrations.
+  </Card>
+</CardGroup>
