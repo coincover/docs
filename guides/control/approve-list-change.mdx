@@ -5,7 +5,7 @@ description: "As a member of an Access Control List, review and vote on a propos
 icon: "user-check"
 ---
 
-When someone proposes adding, removing or replacing a member of a backup's Access Control List (ACL), everyone already on that ACL is asked to vote. A simple majority decides. This guide is for that vote.
+When someone proposes a change to an Access Control List (ACL), such as adding or removing members, changing a member's role or changing the approval policy, everyone already on that ACL is asked to vote. That includes anyone the change would remove. The ACL's current approval policy decides the outcome: **Majority**, **Percentage** or **Exact count**, plus any **Veto** or **Must approve** roles. This guide is for that vote.
 
 ## You'll be notified
 
@@ -23,22 +23,33 @@ Both take you to the pending change.
     From the email or the bell, open the change to review it.
   </Step>
   <Step title="Review what's proposed">
-    You'll see the member being replaced or removed and the proposed new member. Check it's correct before you vote.
+    Under **Changes being voted on** you'll see every change in the request, with the ACL as it is now and as it will be after the change. A single request can add and remove members, change roles and change the policy. You approve or reject all of it together. Check it's correct before you vote.
   </Step>
   <Step title="Verify your identity">
     You complete an identity check as part of voting. It confirms it's really you approving the change, at the moment you approve it. If your organisation has hardware security keys enabled, you'll also tap your registered security key as you vote.
   </Step>
   <Step title="Approve or reject">
-    Your vote counts toward the majority. Once a simple majority approves, the change takes effect; if a majority reject, it's declined.
+    Select **Approve** or **Reject**, then **Confirm**. Your vote counts toward the ACL's threshold. Once enough members approve under the current policy, all the changes take effect at once, and anyone removed loses access to the ACL. If enough reject, or a Veto member rejects, it's declined and nothing changes.
   </Step>
 </Steps>
+
+## How your vote is counted
+
+- **The threshold applies both ways.** The change is approved when approvals reach the ACL's threshold, and declined when rejections reach it. If everyone has voted and neither side reached it, the change is declined.
+- **If you're a Veto member**, your rejection declines the change on its own. A veto only counts while the vote is still open, so vote promptly.
+- **If you're a Must-approve member**, the change can't pass without your approval, even when the threshold is met. It waits for you.
+- **If the change alters the policy**, this vote still passes under the current policy. The new policy applies from the next vote.
+- **Your vote counts once your identity check completes.**
+- **The voting window.** The vote stays open for your organisation's voting window, seven days by default. If it isn't decided by then, it expires and nothing changes.
+
+See [How the outcome is decided](/guides/control/approval-control-list#how-the-outcome-is-decided) for the full order and a worked example.
 
 <Warning>
   Your vote is final once you confirm it — it can't be changed afterwards. Review the change carefully before confirming.
 </Warning>
 
 <Note>
-  The person being added, removed or replaced doesn't vote on their own change. Everyone else currently on the ACL does.
+  Everyone currently on the ACL votes, including anyone the change would remove. If you're being removed, you still vote: as a Veto member you can veto your own removal, and as a Must-approve member your removal can't pass without your approval. People being added don't vote, because they aren't members yet.
 </Note>
 
 ## What's next

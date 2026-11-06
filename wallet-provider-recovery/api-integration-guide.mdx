@@ -132,7 +132,7 @@ What each field resolves to:
 - `external_customer_id` / `external_package_id` — your `organisation.customer_id` / `package.package_id` from the request.
 - `user_id` — CoinCover's internal user id for the `user_identifier` you sent (not the identifier string).
 - `key_id` — the id of the key being assigned (the same `key_id` returned in the response).
-- `key_fingerprint` — the SHA-256 (hex) of the enclave-issued public-key bytes.
+- `key_fingerprint` — the SHA-256 of the enclave-issued public-key bytes, as lowercase hex.
 - `pulled_by_id` / `pulled_by_type` — the credential CoinCover authenticated the call with (`api_key` or `user_credentials`). CoinCover sets these from your auth token; they aren't read from the request body.
 
 <CodeGroup>
@@ -185,7 +185,7 @@ When `sign_with` is present, the response carries two extra fields alongside `si
 
 `signed_payload` is the exact [JCS-canonical](https://www.rfc-editor.org/rfc/rfc8785) JSON string the enclave signed: object keys are sorted and the `public_key` is always included alongside the fields you requested. `signed_fields` echoes the fields you requested, in request order (it doesn't include `public_key`).
 
-To verify the binding, check the signature over the exact `signed_payload` bytes against CoinCover's published JWKS, then confirm the bound values are the ones you expect. See [Validating key signatures](/guides/validating-key-signatures) for the verification process, including how to cache keys by `kid`.
+To verify the binding, check the signature over the exact `signed_payload` bytes against CoinCover's published JWKS, then confirm the bound values are the ones you expect. See [Validating key signatures](/guides/validating-key-signatures) for the verification process.
 
 <Note>
   `sign_with` is optional and additive. Omit it and the response is unchanged — the signature covers the `public_key` alone, verified over the UTF-8 bytes of the hex `public_key` string (not its decoded bytes) — so existing integrations need no changes.

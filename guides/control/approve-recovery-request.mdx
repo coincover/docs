@@ -5,7 +5,7 @@ description: "As a member of an Access Control List, review a recovery request, 
 icon: "circle-check"
 ---
 
-When a recovery is requested for a backup, everyone on that backup's Access Control List (ACL) is asked to approve it. A simple majority is required before any material is released. This guide is for that approval.
+When a recovery is requested for a backup, everyone on that backup's Access Control List (ACL) is asked to approve it. Nothing is released until the ACL's approval policy is met. This guide is for that approval.
 
 ## You'll be notified
 
@@ -24,7 +24,7 @@ A pending recovery reaches you two ways — an email, and the notifications bell
     Before your approval is recorded, you complete a fresh identity check. This confirms it's really you approving, at the moment of approval — a recent sign-in isn't enough on its own. If your organisation has hardware security keys enabled, you'll also be asked to tap your registered security key as part of this step.
   </Step>
   <Step title="Approve or reject">
-    Approve to add your vote toward the majority, or reject to decline the recovery.
+    Approve to add your vote toward the ACL's threshold, or reject to vote against the recovery. If you're a **Veto** member, your rejection declines it on its own. If you're a **Must approve** member, the recovery can't be approved without you.
   </Step>
 </Steps>
 
@@ -34,7 +34,9 @@ A pending recovery reaches you two ways — an email, and the notifications bell
 
 ## What happens next
 
-Once a simple majority of the ACL has approved, the recovery is authorised and the encrypted package is prepared for the requester to download. Only members of that backup's ACL can approve its recovery.
+Once the ACL's approval policy is met, the recovery is authorised and the encrypted package is prepared for the requester to download. If rejections reach the threshold, or a Veto member rejects, the recovery is declined. If a Must-approve member rejects, the recovery can't be approved, and it's declined once everyone has voted. A recovery that isn't decided within your organisation's voting window, seven days by default, expires. Only members of that backup's ACL can approve its recovery.
+
+See [How the outcome is decided](/guides/control/approval-control-list#how-the-outcome-is-decided) for the full rules.
 
 ## What's next
 

@@ -47,7 +47,7 @@ Recovery is for an emergency — a lost shard or password, or Copper being unava
     Raise a recovery request in CoinCover Control and select the backup to recover. As part of the request you supply a **public GPG key**, which CoinCover uses to encrypt the released material so it's protected in transit. New to GPG? See [Create a GPG key pair](/guides/control/create-gpg-key).
   </Step>
   <Step title="Your approvers sign off">
-    The named approvers on the backup are asked to approve, each re-verifying their identity as they vote. Nothing is released until a simple majority has approved.
+    The named approvers on the backup are asked to approve, each re-verifying their identity as they vote. Nothing is released until the backup's approval policy has been met.
   </Step>
   <Step title="CoinCover releases your backup shard">
     Because your Copper backup is held offline, CoinCover's team retrieves it before releasing — Control tells you this is happening and notifies you when the encrypted download is ready. You download it and decrypt it locally with your **GPG private key**.

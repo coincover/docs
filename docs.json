@@ -59,6 +59,7 @@
           "partner-guides/utila",
           "partner-guides/fordefi",
           "partner-guides/copper",
+          "partner-guides/dynamic",
           "partner-guides/coinbase-prime"
         ]
       },
@@ -75,11 +76,13 @@
             "icon": "sliders",
             "pages": [
               "guides/control/get-started",
+              "guides/control/security-keys",
               "guides/control/approval-control-list",
               "guides/control/approve-list-change",
               "guides/control/recover-key-material",
               "guides/control/create-gpg-key",
               "guides/control/approve-recovery-request",
+              "guides/control/check-a-backup",
               "guides/vault-sync"
             ]
           }

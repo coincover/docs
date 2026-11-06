@@ -19,6 +19,7 @@ This section documents each partner integration end to end: how backup works acr
 | [Utila](/partner-guides/utila) | MPC, 2-of-2 | RSA encryption via Partner API |
 | [Fordefi](/partner-guides/fordefi) | MPC, 2-of-2 | Console-based, RSA `.pem` handover |
 | [Copper](/partner-guides/copper) | MPC, 2-of-3 (Copper Unlimited) | Key ceremony |
+| [Dynamic](/partner-guides/dynamic) | Embedded wallet, 2-of-2 offline recovery | Server share encrypted to a per-user key, delivered by webhook |
 | [Coinbase Prime](/partner-guides/coinbase-prime) | Onchain Wallet, non-custodial | Recovery passphrase backed up with the CoinCover CLI |
 
 <Note>
@@ -66,6 +67,10 @@ This section documents each partner integration end to end: how backup works acr
 
   <Card title="Copper" icon="coins" href="/partner-guides/copper">
     The offline key-ceremony backup and ACL-approved recovery for the Copper Unlimited MPC wallet.
+  </Card>
+
+  <Card title="Dynamic" icon="bolt" href="/partner-guides/dynamic">
+    The identity-verified server share backup and recovery to the user's device for Dynamic embedded wallets.
   </Card>
 
   <Card title="Coinbase Prime" icon="building-columns" href="/partner-guides/coinbase-prime">
