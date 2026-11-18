@@ -66,32 +66,31 @@ Setup produces three things. It's easier to follow once you know where each one 
   <Step title="Generate the key pair and CSR on your computer">
     Fireblocks issues the API key against a certificate signing request (CSR) that **you** generate, so the key pair originates on your own machine rather than at Fireblocks or at CoinCover. You do this once, with OpenSSL, before you open the Fireblocks console.
 
+    Start by making a folder for the files, then open PowerShell or Terminal **from inside that folder**. OpenSSL saves the files wherever the window was opened, so this way they land in a folder you already have open, ready to drag into Fireblocks.
+
     <Tabs>
       <Tab title="Windows">
-        1. Open **PowerShell** from the Start menu. Open it normally, **not** with _Run as administrator_. An administrator window starts in `C:\Windows\System32`, and your files would be saved there, where they're hard to find.
-        2. Make a working folder and move into it:
-           ```powershell
-           mkdir -Force "$HOME\coincover-vault-sync"; cd "$HOME\coincover-vault-sync"
-           ```
+        1. In File Explorer, make a new folder, for example `coincover-vault-sync` in **Documents**, and open it. Keep this window open.
+        2. Open PowerShell from inside the folder: click the folder's address bar, type `powershell` and press Enter. On Windows 11 you can instead right-click an empty space in the folder and choose **Open in Terminal**.
+
+           The prompt should end with your folder's name, such as `PS C:\Users\you\Documents\coincover-vault-sync>`. Don't use **Run as administrator**: an administrator window starts in `C:\Windows\System32`, and your files would be saved there instead.
         3. Generate the key pair and CSR. Windows doesn't include OpenSSL, but Git for Windows does, so this calls it by its full path:
            ```powershell
            & "C:\Program Files\Git\usr\bin\openssl.exe" req -new -newkey rsa:4096 -nodes -keyout api_private.key -out api_user.csr -subj "/O=Your Organisation/CN=CoinCover Vault Sync"
            ```
-           If you get _The term ... is not recognized_ or _cannot find the path_, Git for Windows isn't installed. Install it from [git-scm.com](https://git-scm.com/download/win), or run `winget install --id Git.Git -e`, then close and reopen PowerShell and run the command again. If `openssl version` already works in your PowerShell, you can use plain `openssl` instead of the full path.
-        4. Open the folder so you can see both files:
-           ```powershell
-           explorer .
-           ```
+           If you get _The term ... is not recognized_ or _cannot find the path_, Git for Windows isn't installed. Install it from [git-scm.com](https://git-scm.com/download/win), or run `winget install --id Git.Git -e`, then close PowerShell, reopen it from your folder as in step 2, and run the command again. If `openssl version` already works in your PowerShell, you can use plain `openssl` instead of the full path.
+        4. The two files appear in the folder window you opened in step 1.
       </Tab>
       <Tab title="macOS and Linux">
-        OpenSSL is already installed. Open **Terminal** and run:
+        OpenSSL is already installed.
 
-        ```bash
-        mkdir -p ~/coincover-vault-sync && cd ~/coincover-vault-sync
-        openssl req -new -newkey rsa:4096 -nodes -keyout api_private.key -out api_user.csr -subj "/O=Your Organisation/CN=CoinCover Vault Sync"
-        ```
-
-        On macOS, `open .` opens the folder in Finder.
+        1. In Finder, make a new folder, for example `coincover-vault-sync` in **Documents**.
+        2. Open Terminal from inside the folder: right-click the folder and choose **Services → New Terminal at Folder**. If that option isn't there, open **Terminal**, type `cd` followed by a space, drag the folder into the Terminal window, and press Enter. On Linux, most file managers have **Open in Terminal** on the right-click menu.
+        3. Generate the key pair and CSR:
+           ```bash
+           openssl req -new -newkey rsa:4096 -nodes -keyout api_private.key -out api_user.csr -subj "/O=Your Organisation/CN=CoinCover Vault Sync"
+           ```
+        4. The two files appear in the folder.
       </Tab>
     </Tabs>
 
@@ -171,7 +170,7 @@ Setup produces three things. It's easier to follow once you know where each one 
 | --- | --- | --- |
 | _'openssl' is not recognized_ (Windows) | OpenSSL isn't on your PATH | Use the full-path command in the Windows tab above |
 | _Error making certificate request_ | A Country Name longer than two letters was typed at the prompt | Run the command again with `-subj`, or enter a two-letter code |
-| You can't find `api_user.csr` | PowerShell was opened as administrator, so the files went to `C:\Windows\System32` | Run `explorer .` in the same window to open the folder they're in, or start again in a normal PowerShell window |
+| You can't find `api_user.csr` | The window wasn't opened from your folder, so the files were saved somewhere else. An administrator PowerShell window saves them to `C:\Windows\System32` | In the same window, run `explorer .` (Windows) or `open .` (macOS) to open the folder the files went to, and move them into your folder |
 | OpenSSL asks for a _PEM pass phrase_ | `-nodes` was left off the command | Run the full command again. Control won't accept a passphrase-protected key |
 | The Control button is greyed out and reads **Awaiting Fireblocks credentials** | You're a Member, not an organisation owner | An organisation owner links the workspace |
 | _Must be an unencrypted PEM-encoded private key_ | The key is passphrase-protected, or the CSR was pasted instead of the key | Paste the contents of `api_private.key`, not `api_user.csr`. If the key starts with `-----BEGIN ENCRYPTED PRIVATE KEY-----`, generate a new pair with `-nodes` |
