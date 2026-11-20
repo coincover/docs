@@ -46,38 +46,110 @@ You'll need three things in place:
   The read-only API user is created in the **Fireblocks console**, not in CoinCover Control. You then paste the credentials Fireblocks issues into Control.
 </Warning>
 
+### What you'll make, and where each piece goes
+
+Setup produces three things. It's easier to follow once you know where each one ends up.
+
+| Item | What it is | Made where | Goes to |
+| --- | --- | --- | --- |
+| `api_user.csr` | A certificate signing request (CSR). It holds the public half of a new key pair, and is safe to share | On your own computer | The Fireblocks console, when you create the API user |
+| `api_private.key` | The private half of that key pair. Treat it like a password | On your own computer, in the same step | CoinCover Control, pasted by an organisation owner |
+| API key | An identifier Fireblocks issues for the API user, in the form `xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx` | The Fireblocks console | CoinCover Control, pasted alongside the private key |
+
+<Tip>
+  **Have the organisation owner do it, or be in the room.** Only an organisation owner can paste the credentials into Control, so the smoothest path is for the owner to generate the key pair on their own computer and link it straight away. If someone else generates it, the private key has to be handed to the owner. Don't send it by email or chat; use your password manager's secure sharing, and delete any copies once the workspace is linked.
+</Tip>
+
 ## Set it up
 
 <Steps>
+  <Step title="Generate the key pair and CSR on your computer">
+    Fireblocks issues the API key against a certificate signing request (CSR) that **you** generate, so the key pair originates on your own machine rather than at Fireblocks or at CoinCover. You do this once, with OpenSSL, before you open the Fireblocks console.
+
+    Start by making a folder for the files, then open PowerShell or Terminal **from inside that folder**. OpenSSL saves the files wherever the window was opened, so this way they land in a folder you already have open, ready to drag into Fireblocks.
+
+    <Tabs>
+      <Tab title="Windows">
+        1. In File Explorer, make a new folder, for example `coincover-vault-sync` in **Documents**, and open it. Keep this window open.
+        2. Open PowerShell from inside the folder: click the folder's address bar, type `powershell` and press Enter. On Windows 11 you can instead right-click an empty space in the folder and choose **Open in Terminal**.
+
+           The prompt should end with your folder's name, such as `PS C:\Users\you\Documents\coincover-vault-sync>`. Don't use **Run as administrator**: an administrator window starts in `C:\Windows\System32`, and your files would be saved there instead.
+        3. Generate the key pair and CSR. Windows doesn't include OpenSSL, but Git for Windows does, so this calls it by its full path:
+           ```powershell
+           & "C:\Program Files\Git\usr\bin\openssl.exe" req -new -newkey rsa:4096 -nodes -keyout api_private.key -out api_user.csr -subj "/O=Your Organisation/CN=CoinCover Vault Sync"
+           ```
+           If you get _The term ... is not recognized_ or _cannot find the path_, Git for Windows isn't installed. Install it from [git-scm.com](https://git-scm.com/download/win), or run `winget install --id Git.Git -e`, then close PowerShell, reopen it from your folder as in step 2, and run the command again. If `openssl version` already works in your PowerShell, you can use plain `openssl` instead of the full path.
+        4. The two files appear in the folder window you opened in step 1.
+      </Tab>
+      <Tab title="macOS and Linux">
+        OpenSSL is already installed.
+
+        1. In Finder, make a new folder, for example `coincover-vault-sync` in **Documents**.
+        2. Open Terminal from inside the folder: right-click the folder and choose **Services → New Terminal at Folder**. If that option isn't there, open **Terminal**, type `cd` followed by a space, drag the folder into the Terminal window, and press Enter. On Linux, most file managers have **Open in Terminal** on the right-click menu.
+        3. Generate the key pair and CSR:
+           ```bash
+           openssl req -new -newkey rsa:4096 -nodes -keyout api_private.key -out api_user.csr -subj "/O=Your Organisation/CN=CoinCover Vault Sync"
+           ```
+        4. The two files appear in the folder.
+      </Tab>
+    </Tabs>
+
+    Replace `Your Organisation` with your company name if you like. The values are labels only, and nothing in Vault sync depends on them. Generating a 4096-bit key can take a few seconds, and prints a row of dots while it works.
+
+    You now have two files in the folder: `api_user.csr`, which goes to Fireblocks, and `api_private.key`, which goes to Control and nowhere else.
+
+    <Note>
+      `-nodes` saves the private key without a passphrase. That's deliberate: Control only accepts an unencrypted key, one whose first line is `-----BEGIN PRIVATE KEY-----` or `-----BEGIN RSA PRIVATE KEY-----`.
+    </Note>
+
+    <Accordion title="OpenSSL is asking me questions (Country Name, State, ...)">
+      You ran the command without the `-subj "..."` part, so OpenSSL is asking for the certificate fields one by one. You can answer them:
+
+      - **Country Name** must be exactly **two letters**, such as `GB`, `US` or `CA`. Typing a full name like `Canada` makes OpenSSL stop with _Error making certificate request_. If that happens, run the command again.
+      - For every other field, type `.` and press Enter to leave it blank.
+      - Press Enter at **A challenge password** and **An optional company name** to skip them.
+    </Accordion>
+
+    Fireblocks documents this step at [Generate a CSR for an API user](https://developers.fireblocks.com/docs/generate-a-csr-for-an-api-user).
+  </Step>
   <Step title="Create a read-only API user in Fireblocks">
-    In the Fireblocks console, under developer settings, create an API user with the **Viewer** role — the lowest-privilege role that can list vaults and addresses.
+    In the Fireblocks console, go to **Settings → Users** and select **Add user**, then choose **API user**.
+
+    - **Name:** something recognisable, such as `CoinCover`.
+    - **Role:** **Viewer**, the lowest-privilege role that can list vaults and addresses.
+    - **CSR file:** upload `api_user.csr` from the folder you made in the previous step. Upload the `.csr` file, never the `.key` file.
+
+    Select **Add user**. Fireblocks asks for owner approval before the API user goes live. Once it's approved, the user shows as **Active** in the users list.
 
     <Note>
       CoinCover reads nothing beyond vault accounts and addresses, but nothing at link time inspects the privilege level of the credentials you supply. Keeping the API user at Viewer is your control, not one CoinCover applies for you.
     </Note>
   </Step>
-  <Step title="Generate a certificate signing request">
-    Fireblocks issues the API key against a certificate signing request (CSR) that **you** generate, so the key pair originates on your own machine rather than at Fireblocks or at CoinCover.
-
-    Generate an RSA 4096-bit key pair and the CSR on your own machine:
-
-    ```bash
-    openssl req -new -newkey rsa:4096 -nodes -keyout api_private.key -out api_user.csr
-    ```
-
-    OpenSSL prompts for the certificate fields — Common Name (your name, or the API user's), Organisation, Country as a two-letter code, State, Locality, and Organisational Unit, which is optional. You end up with two files: `api_user.csr`, which goes to Fireblocks, and `api_private.key`, which stays with you.
-
-    Upload `api_user.csr` in the **CSR File** field as you create the API user in the Fireblocks console, and Fireblocks issues the **API key** against it.
-
-    Fireblocks documents this step at [Generate a CSR for an API user](https://developers.fireblocks.com/docs/generate-a-csr-for-an-api-user).
+  <Step title="Copy the API key">
+    In **Settings → Users**, find the API user you just created and use the copy control on its row to copy its **API key**. It's a 36-character identifier in the form `xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx`.
   </Step>
   <Step title="Link the workspace in CoinCover Control">
-    On the backup's page in Control, an organisation owner opens the credentials dialog and pastes the issued API key and the private key. Both are encrypted on arrival and only the encrypted form is stored.
+    An organisation owner opens the backup in Control (**Backups**, then **Manage** on the Fireblocks backup) and selects **Set up Vault Sync**.
 
-    Supply the private key exactly as it was issued against your CSR — complete, and unencrypted.
+    If you see a greyed-out **Awaiting Fireblocks credentials** button instead, you're signed in as a Member. Ask an organisation owner to do this step.
+
+    In the dialog:
+
+    - **Fireblocks API Key:** paste the API key you copied.
+    - **Private CSR Key:** paste the **entire contents** of `api_private.key`, including the `-----BEGIN PRIVATE KEY-----` and `-----END PRIVATE KEY-----` lines. To copy the whole file without opening it, run this in the same folder:
+      <CodeGroup>
+      ```powershell Windows
+      Get-Content -Raw api_private.key | Set-Clipboard
+      ```
+      ```bash macOS
+      pbcopy < api_private.key
+      ```
+      </CodeGroup>
+
+    Select **Link workspace**. Both values are encrypted on arrival and only the encrypted form is stored.
   </Step>
-  <Step title="Run the first refresh">
-    Linking sets the workspace to pending. Trigger the first refresh from the same screen. It runs in the background rather than inside the request, and the page follows it and updates itself when it finishes.
+  <Step title="Let the first refresh run">
+    Linking starts the first refresh automatically. It runs in the background, and the page follows it and updates itself when it finishes.
   </Step>
   <Step title="Confirm the refresh succeeded">
     Check the **refresh status and the refresh history**, not only that a refresh happened. Until a refresh has succeeded, there is nothing in the record to release at recovery.
@@ -87,7 +159,23 @@ You'll need three things in place:
 
     This is the point to catch a workspace linked with credentials scoped to the wrong workspace — CoinCover cannot tell one of your workspaces from another, so any valid credentials will link and sync.
   </Step>
+  <Step title="Tidy up the private key file">
+    Once the first refresh has succeeded, you don't need `api_private.key` again. Delete it, or store it in your password manager. CoinCover can't give it back to you, and if it's ever lost you can issue a new API user at Fireblocks and link again.
+  </Step>
 </Steps>
+
+### Troubleshooting setup
+
+| What you see | What it means | What to do |
+| --- | --- | --- |
+| _'openssl' is not recognized_ (Windows) | OpenSSL isn't on your PATH | Use the full-path command in the Windows tab above |
+| _Error making certificate request_ | A Country Name longer than two letters was typed at the prompt | Run the command again with `-subj`, or enter a two-letter code |
+| You can't find `api_user.csr` | The window wasn't opened from your folder, so the files were saved somewhere else. An administrator PowerShell window saves them to `C:\Windows\System32` | In the same window, run `explorer .` (Windows) or `open .` (macOS) to open the folder the files went to, and move them into your folder |
+| OpenSSL asks for a _PEM pass phrase_ | `-nodes` was left off the command | Run the full command again. Control won't accept a passphrase-protected key |
+| The Control button is greyed out and reads **Awaiting Fireblocks credentials** | You're a Member, not an organisation owner | An organisation owner links the workspace |
+| _Must be an unencrypted PEM-encoded private key_ | The key is passphrase-protected, or the CSR was pasted instead of the key | Paste the contents of `api_private.key`, not `api_user.csr`. If the key starts with `-----BEGIN ENCRYPTED PRIVATE KEY-----`, generate a new pair with `-nodes` |
+| _Private key appears truncated_ | The last line was missed when copying | Copy the whole file with the clipboard command above |
+| _API key must be a valid UUID_ | Something other than the API key was pasted | Copy the API key from the API user's row in Fireblocks |
 
 ## Keeping it current
 
